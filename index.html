@@ -1,0 +1,4116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise Bancos Captives | Stellantis Finance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root{
+    --navy:#243782; --navy-dark:#1a2a63;
+    --stla: rgb(36,55,130); --gm: rgb(0,120,190); --toyota: rgb(235,10,30);
+    --volks: rgb(0,51,204); --rci: rgb(248,67,0);
+    --bg:#eef0f4; --panel:#ffffff; --border:#e2e5ee;
+    --text:#1c2333; --text-mut:#6b7286;
+    --green:#16794f; --red:#c0341f; --gold:#a6791f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);}
+  .app{display:flex;min-height:100vh;}
+
+  /* ---- MENU LATERAL ---- */
+  nav.sidebar{
+    width:260px;flex-shrink:0;background:var(--navy);color:#fff;
+    display:flex;flex-direction:column;padding:22px 14px;position:sticky;top:0;height:100vh;
+  }
+  .brand{padding:4px 10px 22px 10px;border-bottom:1px solid rgba(255,255,255,.18);margin-bottom:16px;}
+  .brand .l1{font-weight:800;font-size:20px;letter-spacing:1px;}
+  .brand .l2{font-size:13px;opacity:.85;margin-top:2px;}
+  .menu{list-style:none;padding:0;margin:0;flex:1;}
+  .menu li{margin-bottom:6px;}
+  .menu button{
+    width:100%;text-align:left;background:transparent;border:none;color:#fff;
+    padding:11px 14px;border-radius:10px;font-size:14.5px;cursor:pointer;
+    display:flex;align-items:center;gap:10px;font-family:inherit;transition:.15s;
+  }
+  .menu button:hover{background:rgba(255,255,255,.12);}
+  .menu button.active{background:#ffffff;color:var(--navy);font-weight:700;}
+  .menu .ic{font-size:16px;width:20px;text-align:center;}
+  .footer-src{border-top:1px solid rgba(255,255,255,.18);padding-top:14px;font-size:11.5px;line-height:1.5;opacity:.9;}
+  .source-toggle{display:flex;background:rgba(255,255,255,.12);border-radius:10px;padding:3px;margin-bottom:16px;gap:3px;}
+  .source-btn{flex:1;border:none;background:transparent;color:#fff;opacity:.75;padding:8px 6px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;}
+  .source-btn:hover{opacity:1;}
+  .source-btn.active{background:#fff;color:var(--navy);opacity:1;}
+  .menu li.hidden-source{display:none;}
+  .footer-src b{display:block;margin-bottom:2px;}
+
+  /* ---- CONTEÚDO ---- */
+  main{flex:1;padding:28px 34px;max-width:1500px;}
+  .page{display:none;}
+  .page.active{display:block;}
+  h1.page-title{font-size:22px;margin:0 0 4px 0;color:var(--navy);}
+  .page-sub{color:var(--text-mut);font-size:13px;margin-bottom:22px;}
+
+  .alert-bar{
+    background:#fff6e9;border:1px solid #f0d7a8;color:#7a5410;
+    padding:10px 14px;border-radius:8px;font-size:12.8px;margin-bottom:20px;line-height:1.5;
+  }
+  .alert-bar b{color:#5c3d0a;}
+
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px;}
+  @media(max-width:1200px){.grid4{grid-template-columns:repeat(2,1fr);}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(20,30,60,.06);}
+  .card h3{margin:0 0 10px 0;font-size:13px;color:var(--text-mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+  .card canvas{max-height:210px;}
+
+  .section-title{font-size:15.5px;font-weight:700;color:var(--navy);margin:30px 0 12px 0;padding-top:6px;border-top:1px solid var(--border);}
+  .section-title:first-child{border-top:none;margin-top:0;}
+
+  table{border-collapse:collapse;width:100%;font-size:13px;background:#fff;table-layout:fixed;}
+  thead th{background:var(--navy);color:#fff;padding:9px 8px;text-align:center;font-weight:600;position:sticky;top:0;overflow:hidden;text-overflow:ellipsis;}
+  thead th:first-child{text-align:center;width:22%;}
+  thead th.highlight-col{text-align:center;background:var(--navy-dark);}
+  tbody td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  tbody td:first-child{text-align:center;color:var(--text);white-space:normal;}
+  tbody tr.subtotal td{font-weight:700;background:#f2f4fa;color:var(--gold);}
+  tbody tr.no-border td{border-bottom:none;}
+  tbody tr.pct td{color:var(--text-mut);font-size:11.3px;font-style:italic;border-bottom:1px solid var(--border);padding-top:0;}
+  tbody tr.pct td.pos{color:var(--green);}
+  tbody tr.pct td.neg{color:var(--red);}
+  .valpos{color:var(--green);}
+  .valneg{color:var(--red);}
+  .nd{color:#b5b9c6;font-style:italic;}
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(20,30,60,.06);}
+  td.highlight-col{text-align:center;background:#f7f8fb;}
+  .tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:10px;font-weight:700;white-space:nowrap;}
+  .tag.lead{background:#e4f5ec;color:var(--green);}
+  .tag.lag{background:#fbe9e6;color:var(--red);}
+  .tag.nd{background:#f0f1f5;color:#9aa0b0;font-style:normal;font-weight:600;}
+
+  .filters{display:flex;gap:10px;margin-bottom:14px;}
+  select,.btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border);font-size:13px;background:#fff;font-family:inherit;}
+
+  .comp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+  @media(max-width:1300px){.comp-grid{grid-template-columns:repeat(2,1fr);}}
+  .comp-card{border:1px solid var(--border);border-radius:12px;padding:14px;background:#fff;box-shadow:0 1px 3px rgba(20,30,60,.06);}
+  .comp-card .head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .comp-card .dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+  .comp-card .name{font-weight:700;font-size:13.5px;}
+  .comp-card dl{margin:0;font-size:12px;line-height:1.55;}
+  .comp-card dt{color:var(--navy);font-weight:700;margin-top:8px;font-size:12.5px;text-transform:uppercase;letter-spacing:.3px;}
+  .comp-card dd{margin:0;}
+
+  .kpi-tab-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .kpi-tab-bar button{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:12.5px;cursor:pointer;font-family:inherit;}
+  .kpi-tab-bar button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  .hl-grid{display:grid;grid-template-columns:1fr;gap:16px;}
+  .hl-card{border-radius:14px;padding:18px;background:#fff;color:var(--text);position:relative;overflow:hidden;border:1px solid var(--border);box-shadow:0 1px 3px rgba(20,30,60,.06);padding-left:24px;}
+  .hl-card h4{color:var(--navy);}
+  .hl-card .rationale{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .hl-card .rationale-title{font-size:11.5px;font-weight:700;color:var(--text-mut);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;}
+  .hl-card h4{margin:0 0 10px 0;font-size:15px;}
+  .hl-card ul{margin:0;padding-left:18px;font-size:12.6px;line-height:1.65;}
+  .hl-card .stripe{position:absolute;top:0;left:0;width:6px;height:100%;}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="l1">FINANCE</div>
+      <div class="l2">Análise Banco Captives</div>
+    </div>
+    <div class="source-toggle" id="sourceToggle">
+      <button class="source-btn active" data-source="df">DF's</button>
+      <button class="source-btn" data-source="bacen">Bacen</button>
+    </div>
+    <ul class="menu" id="menu"></ul>
+    <div class="footer-src">
+      <b>Fonte:</b>
+      <span id="footerSrcText">Demonstrações Financeiras dos Conglomerados Prudenciais de cada instituição (31/12/2025), Res. CMN nº 4.280/2013.</span>
+    </div>
+  </nav>
+  <main id="main"></main>
+</div>
+<script id="data-json" type="application/json">{
+ "order": [
+  "stla",
+  "gm",
+  "toyota",
+  "volks",
+  "rci"
+ ],
+ "meta": {
+  "stla": {
+   "name": "Stellantis Financiamentos",
+   "short": "STLA",
+   "color": "rgb(36,55,130)",
+   "standard": "BR GAAP / COSIF (Res. CMN 4.966/21)",
+   "period": "31/12/2025 (2024/2023 disponíveis via Relatório Prudencial — mesmo perímetro, padrão contábil anterior à Res. 4.966/21)",
+   "controlador": "Stellantis Financial Services Europe / Stellantis Automóveis Brasil Ltda.",
+   "entidades": "Stellantis Financiamentos (líder), Banco Stellantis, FIDC Vita Auto, FIDC MOAB, FIDC Mobility I, FIDC Mobility II",
+   "marcas": "Fiat, Jeep, Peugeot, Citroën, RAM"
+  },
+  "gm": {
+   "name": "Banco GM",
+   "short": "GM",
+   "color": "rgb(0,120,190)",
+   "standard": "IFRS",
+   "period": "31/12/2025 e 31/12/2024 (reapresentado)",
+   "controlador": "General Motors Investment Participações Ltda. (controladora final: General Motors Company)",
+   "entidades": "Banco GM S.A. e controladas (Grupo Chevrolet Serviços Financeiros)",
+   "marcas": "Chevrolet"
+  },
+  "toyota": {
+   "name": "Banco Toyota do Brasil",
+   "short": "Toyota",
+   "color": "rgb(235,10,30)",
+   "standard": "IFRS",
+   "period": "31/12/2025 e 31/12/2024",
+   "controlador": "Toyota Financial Services International Corporation (TFSIC) / Toyota Financial Services Corporation (TFSC)",
+   "entidades": "Banco Toyota do Brasil (líder), Toyota Administradora de Consórcios do Brasil, Toyota Corretora de Seguros do Brasil",
+   "marcas": "Toyota"
+  },
+  "volks": {
+   "name": "Banco Volkswagen",
+   "short": "Volkswagen",
+   "color": "rgb(0,51,204)",
+   "standard": "IFRS",
+   "period": "31/12/2025 e 31/12/2024",
+   "controlador": "Volkswagen AG (Wolfsburg, Alemanha)",
+   "entidades": "Banco Volkswagen S.A. e controladas",
+   "marcas": "Volkswagen, Audi, Seat, Škoda"
+  },
+  "rci": {
+   "name": "Banco RCI Brasil",
+   "short": "RCI",
+   "color": "rgb(248,67,0)",
+   "standard": "BR GAAP / COSIF (Res. CMN 4.966/21)",
+   "period": "31/12/2025 (2024/2023 disponíveis via RCI_Dez_24.pdf — modelo de rating AA-H, anterior à Res. 4.966/21)",
+   "controlador": "RCI Banque S.A. / Grupo Santander (Conglomerado Santander)",
+   "entidades": "Banco RCI Brasil S.A.",
+   "marcas": "Renault, Nissan"
+  }
+ },
+ "years": {
+  "stla": [
+   2025,
+   2024
+  ],
+  "gm": [
+   2025,
+   2024
+  ],
+  "toyota": [
+   2025,
+   2024
+  ],
+  "volks": [
+   2025,
+   2024
+  ],
+  "rci": [
+   2025,
+   2024
+  ]
+ },
+ "bs": {
+  "stla": {
+   "ativo": [
+    29369685,
+    19491827
+   ],
+   "passivo": [
+    21313773,
+    15159561
+   ],
+   "pl": [
+    8055912,
+    4332266
+   ],
+   "capital_social": [
+    2029756,
+    1029756
+   ]
+  },
+  "gm": {
+   "ativo": [
+    16635369,
+    16644756
+   ],
+   "passivo": [
+    13988886,
+    13976548
+   ],
+   "pl": [
+    2646483,
+    2668208
+   ],
+   "capital_social": [
+    2016479,
+    2016479
+   ]
+  },
+  "toyota": {
+   "ativo": [
+    12308328,
+    12218898
+   ],
+   "passivo": [
+    10974404,
+    10641989
+   ],
+   "pl": [
+    1333924,
+    1576909
+   ],
+   "capital_social": [
+    686261,
+    686261
+   ]
+  },
+  "volks": {
+   "ativo": [
+    60580375,
+    53305466
+   ],
+   "passivo": [
+    54296877,
+    47681553
+   ],
+   "pl": [
+    6283498,
+    5623913
+   ],
+   "capital_social": [
+    3948971,
+    3650746
+   ]
+  },
+  "rci": {
+   "ativo": [
+    14368420,
+    12712278
+   ],
+   "passivo": [
+    13109474,
+    11187212
+   ],
+   "pl": [
+    1258946,
+    1525066
+   ],
+   "capital_social": [
+    985225,
+    985225
+   ]
+  }
+ },
+ "pl_breakdown": {
+  "stla": {
+   "capital_social": [
+    2029756,
+    1029756
+   ],
+   "reservas_outros": [
+    144344,
+    153237
+   ],
+   "atribuivel_controladores": [
+    2174100,
+    1182993
+   ],
+   "nci": [
+    5881812,
+    3149273
+   ],
+   "nci_banco_stellantis": [
+    1384611,
+    1587588
+   ],
+   "nci_fidcs": [
+    4497201,
+    1561685
+   ],
+   "nci_nota": "NCI engloba DOIS componentes distintos, conforme Nota de Escopo de Consolidação (DF 2025) e Nota 14.e — Participações Não Controladoras (Relatório Prudencial 2024, pág. 32): (1) Banco Stellantis — R$1.384.611 mil (2025) / R$1.587.588 mil (2024) — instituição 100% do Grupo Stellantis, consolidada como 'braço operacional' junto à Stellantis Financiamentos, mas sem participação societária direta entre as duas; portanto NÃO é capital de terceiros externos ao Grupo, e sim capital do próprio Grupo Stellantis. (2) FIDCs — R$4.497.201 mil (2025, residual: Vita Auto + MOAB + Mobility I e II) / R$1.561.685 mil (2024, apenas FIDC Vita Auto — os demais FIDCs ainda não existiam) — cotas detidas por investidores terceiros, que representam capital de terceiros externos ao Grupo."
+  },
+  "gm": {
+   "capital_social": [
+    2016479,
+    2016479
+   ],
+   "reservas_outros": [
+    629983,
+    651729
+   ],
+   "atribuivel_controladores": [
+    2646483,
+    2668208
+   ],
+   "nci": [
+    0,
+    0
+   ],
+   "nci_nota": null
+  },
+  "toyota": {
+   "capital_social": [
+    686261,
+    686261
+   ],
+   "reservas_outros": [
+    647663,
+    890648
+   ],
+   "atribuivel_controladores": [
+    1333924,
+    1576909
+   ],
+   "nci": [
+    0,
+    0
+   ],
+   "nci_nota": null
+  },
+  "volks": {
+   "capital_social": [
+    3948971,
+    3650746
+   ],
+   "reservas_outros": [
+    2287188,
+    1912554
+   ],
+   "atribuivel_controladores": [
+    6236159,
+    5563300
+   ],
+   "nci": [
+    47339,
+    60613
+   ],
+   "nci_nota": "NCI imaterial (0,75% do PL total em 2025) — NÃO vem do FIDC (que é 100% passivo, sem patrimônio). Origem confirmada: 3 empresas consolidadas por controle operacional sem participação societária direta do Banco (Volkswagen Serviços, Volkswagen Corretora de Seguros, Volkswagen Administradora de Negócios). Confirmação: soma do lucro líquido dessas 3 empresas em 2025 (R$86,7 mi) bate exatamente com a Participação dos Não Controladores da DRE (R$86,7 mi) — ver tabela comparativa de FIDCs para detalhes."
+  },
+  "rci": {
+   "capital_social": [
+    985225,
+    985225
+   ],
+   "reservas_outros": [
+    273721,
+    539841
+   ],
+   "atribuivel_controladores": [
+    1258946,
+    1525066
+   ],
+   "nci": [
+    0,
+    0
+   ],
+   "nci_nota": null
+  }
+ },
+ "carteira": {
+  "stla": {
+   "bruta": [
+    27235746,
+    17204150
+   ],
+   "pdd": [
+    253730,
+    157766
+   ],
+   "liquida": [
+    26982016,
+    17046384
+   ]
+  },
+  "gm": {
+   "bruta": [
+    13992772,
+    13978476
+   ],
+   "pdd": [
+    379681,
+    282421
+   ],
+   "liquida": [
+    13613091,
+    13696055
+   ]
+  },
+  "toyota": {
+   "bruta": [
+    10715339,
+    10637195
+   ],
+   "pdd": [
+    160808,
+    189077
+   ],
+   "liquida": [
+    10554531,
+    10448118
+   ]
+  },
+  "volks": {
+   "bruta": [
+    54055224,
+    48008157
+   ],
+   "pdd": [
+    3150870,
+    2741696
+   ],
+   "liquida": [
+    50904354,
+    45266461
+   ]
+  },
+  "rci": {
+   "bruta": [
+    9306406,
+    8874585
+   ],
+   "pdd": [
+    199208,
+    202532
+   ],
+   "liquida": [
+    9107198,
+    8672053
+   ]
+  }
+ },
+ "estagios": {
+  "stla": {
+   "e1": [
+    26546117,
+    null
+   ],
+   "e2": [
+    525968,
+    null
+   ],
+   "e3": [
+    163661,
+    null
+   ],
+   "pdd_e3": [
+    96212,
+    null
+   ],
+   "nota": "Estágios disponíveis apenas para 2025 (Nota 7.d, pág. 32 do DF) — tabela em formato de imagem, não capturada na primeira extração de texto. 2024/2023 não têm estágio pois usavam o modelo de rating C1-C5 (anterior à Res. 4.966/21)."
+  },
+  "gm": {
+   "e1": [
+    null,
+    null
+   ],
+   "e2": [
+    null,
+    null
+   ],
+   "e3": [
+    null,
+    null
+   ],
+   "pdd_e3": [
+    null,
+    null
+   ],
+   "nota": "GM não segrega por estágio IFRS 9 no DF; divulga apenas atraso por faixa (vencidas 140.215 em 2025 e 109.568 em 2024, ambos < 1% da carteira)."
+  },
+  "toyota": {
+   "e1": [
+    10384533,
+    10254844
+   ],
+   "e2": [
+    193249,
+    184643
+   ],
+   "e3": [
+    137557,
+    197708
+   ],
+   "pdd_e3": [
+    68149,
+    98242
+   ],
+   "nota": null
+  },
+  "volks": {
+   "e1": [
+    49370897,
+    40164083
+   ],
+   "e2": [
+    4581361,
+    6469447
+   ],
+   "e3": [
+    3166544,
+    2966177
+   ],
+   "pdd_e3": [
+    1928232,
+    1448414
+   ],
+   "nota": "Tabela de reconciliação de instrumentos financeiros por estágio (inclui caixa e outros ativos sujeitos a ECL, não apenas carteira de crédito)."
+  },
+  "rci": {
+   "e1": [
+    9032319,
+    null
+   ],
+   "e2": [
+    106227,
+    null
+   ],
+   "e3": [
+    167860,
+    null
+   ],
+   "pdd_e3": [
+    93908,
+    null
+   ],
+   "nota": "2024/2023 (RCI_Dez_24) usam o modelo antigo de rating AA-H (Res. CMN 2.682/99), não o modelo de Estágios 1/2/3 (Res. 4.966/21) usado em 2025. Proxy mais próximo de 'Estágio 3' é o Rating H: carteira R$93.771 mil (2024) / R$116.703 mil (2023), com provisão de 100%. Não comparável diretamente ao Estágio 3 de 2025 — mudança de modelo, não de risco."
+  }
+ },
+ "writeoff": {
+  "stla": [
+   106550,
+   null
+  ],
+  "gm": [
+   91825,
+   176508
+  ],
+  "toyota": [
+   176012,
+   139127
+  ],
+  "volks": [
+   692326,
+   null
+  ],
+  "rci": [
+   146534,
+   161205
+  ]
+ },
+ "basileia": {
+  "stla": [
+   14.85,
+   17.87,
+   15.42,
+   15.06
+  ],
+  "gm": [
+   19.14,
+   18.78,
+   19.63,
+   19.43
+  ],
+  "toyota": [
+   12.99,
+   15.5,
+   12.63,
+   13.01
+  ],
+  "volks": [
+   12.94,
+   12.48,
+   12.82,
+   12.49
+  ],
+  "rci": [
+   15.36,
+   14.28,
+   null,
+   15.34
+  ]
+ },
+ "basileia_nivel1": {
+  "stla": [
+   14.85,
+   17.87,
+   15.42,
+   15.06
+  ],
+  "gm": [
+   19.14,
+   18.78,
+   19.63,
+   19.43
+  ],
+  "toyota": [
+   12.99,
+   15.5,
+   12.63,
+   13.01
+  ],
+  "volks": [
+   11.49,
+   11.94,
+   11.43,
+   10.93
+  ],
+  "rci": [
+   12.62,
+   12.09,
+   null,
+   12.22
+  ]
+ },
+ "basileia_obs": {
+  "stla": "Confirmado pelo Bacen (IF.data, base 12/2025 e 12/2024) — sem divergência frente ao DF.",
+  "gm": "Não divulgado no DF (apenas política interna). Valor obtido diretamente do Bacen (IF.data, base 12/2025 e 12/2024): 19,14% e 18,78%.",
+  "toyota": "Confirmado pelo Bacen (IF.data) — sem divergência frente ao DF.",
+  "volks": "Confirmado pelo Bacen (IF.data) — sem divergência frente ao DF.",
+  "rci": "Ver nota específica sobre o RCI acima (índice do Conglomerado Santander)."
+ },
+ "pr": {
+  "stla": [
+   3475492,
+   2800694,
+   3821968,
+   4040640
+  ],
+  "gm": [
+   2565117,
+   2511647,
+   2781743,
+   2842445
+  ],
+  "toyota": [
+   1281904,
+   1444231,
+   1295308,
+   1377441
+  ],
+  "volks": [
+   5918015,
+   5292039,
+   5850633,
+   5858871
+  ],
+  "rci": [
+   null,
+   null,
+   null,
+   null
+  ]
+ },
+ "rwa": {
+  "stla": [
+   23404214,
+   15673421,
+   24785881,
+   26824313
+  ],
+  "gm": [
+   13399071,
+   13370905,
+   14170970,
+   14626356
+  ],
+  "toyota": [
+   9868189,
+   9317893,
+   10255811,
+   10590795
+  ],
+  "volks": [
+   45718200,
+   42394419,
+   45649944,
+   46907362
+  ],
+  "rci": [
+   null,
+   null,
+   null,
+   null
+  ]
+ },
+ "capital_bacen_meta": {
+  "data_base": "12/2025, 12/2024, 03/2026 e 06/2026",
+  "fonte": "Bacen — IF.data (arquivos IF_Data_dados_2025.csv e IF_Data_dados_2024.csv, exportados pelo usuário)",
+  "divergencias": "Nenhuma divergência identificada entre DF e Bacen para Toyota, Volkswagen e Stellantis. GM não divulgava o índice no DF — valor obtido exclusivamente via Bacen. RCI: ver nota específica abaixo."
+ },
+ "santander_context": {
+  "pr": [
+   115069546,
+   101051217,
+   118697562
+  ],
+  "rwa": [
+   748967211,
+   707453514,
+   774008137
+  ],
+  "nota": "Patrimônio de Referência e RWA do Conglomerado Prudencial Santander (Bacen IF.data, base 12/2025 e 12/2024) — fornecidos apenas como contexto, já que o Índice de Basileia do RCI é apurado nesse conglomerado. Não comparável em escala às demais captives."
+ },
+ "dre": {
+  "stla": {
+   "receita_juros": [
+    3849574,
+    2184746
+   ],
+   "despesa_juros": [
+    -2392201,
+    -1278943
+   ],
+   "resultado_liquido_juros": [
+    1457373,
+    905803
+   ],
+   "pdd_dre": [
+    -243343,
+    -86736
+   ],
+   "resultado_apos_pdd": [
+    1457373,
+    905803
+   ],
+   "tarifas_servicos": [
+    202724,
+    261064
+   ],
+   "despesas_pessoal": [
+    -127549,
+    -105098
+   ],
+   "despesas_adm": [
+    -300339,
+    -198627
+   ],
+   "despesas_tributarias": [
+    -103725,
+    -69295
+   ],
+   "outras_receitas_op": [
+    140745,
+    61629
+   ],
+   "outras_despesas_op": [
+    -244017,
+    -206950
+   ],
+   "resultado_operacional": [
+    1025212,
+    648526
+   ],
+   "resultado_nao_operacional": [
+    -2840,
+    -1443
+   ],
+   "resultado_antes_impostos": [
+    1022372,
+    647083
+   ],
+   "impostos": [
+    -255497,
+    -196193
+   ],
+   "lucro_liquido": [
+    766875,
+    450890
+   ]
+  },
+  "gm": {
+   "receita_juros": [
+    3090362,
+    2644878
+   ],
+   "despesa_juros": [
+    -1621326,
+    -1038087
+   ],
+   "resultado_liquido_juros": [
+    1469036,
+    1606791
+   ],
+   "pdd_dre": [
+    -189085,
+    -216188
+   ],
+   "resultado_apos_pdd": [
+    1279951,
+    1390603
+   ],
+   "tarifas_servicos": [
+    0,
+    0
+   ],
+   "despesas_pessoal": [
+    -271915,
+    -253710
+   ],
+   "despesas_adm": [
+    -468372,
+    -445907
+   ],
+   "despesas_tributarias": [
+    -112894,
+    -116610
+   ],
+   "outras_receitas_op": [
+    274362,
+    317318
+   ],
+   "outras_despesas_op": [
+    -283337,
+    -276614
+   ],
+   "resultado_operacional": [
+    417795,
+    615080
+   ],
+   "resultado_nao_operacional": [
+    0,
+    0
+   ],
+   "resultado_antes_impostos": [
+    417795,
+    615080
+   ],
+   "impostos": [
+    -80422,
+    -180450
+   ],
+   "lucro_liquido": [
+    337373,
+    434630
+   ]
+  },
+  "toyota": {
+   "receita_juros": [
+    2355327,
+    2162486
+   ],
+   "despesa_juros": [
+    -1104683,
+    -1606237
+   ],
+   "resultado_liquido_juros": [
+    1250644,
+    547382
+   ],
+   "pdd_dre": [
+    -147743,
+    -147742
+   ],
+   "resultado_apos_pdd": [
+    1102901,
+    399640
+   ],
+   "tarifas_servicos": [
+    117767,
+    104282
+   ],
+   "despesas_pessoal": [
+    -111075,
+    -107098
+   ],
+   "despesas_adm": [
+    -295978,
+    -309949
+   ],
+   "despesas_tributarias": [
+    -66555,
+    -68100
+   ],
+   "outras_receitas_op": [
+    150696,
+    203077
+   ],
+   "outras_despesas_op": [
+    -105735,
+    -82042
+   ],
+   "ganhos_perdas_ativos_passivos": [
+    -389677,
+    348110
+   ],
+   "resultado_operacional": [
+    402344,
+    496787
+   ],
+   "resultado_nao_operacional": [
+    -34160,
+    -44620
+   ],
+   "resultado_antes_impostos": [
+    368184,
+    452167
+   ],
+   "impostos": [
+    -125715,
+    -152943
+   ],
+   "lucro_liquido": [
+    242469,
+    299224
+   ]
+  },
+  "volks": {
+   "receita_juros": [
+    8696132,
+    6405370
+   ],
+   "despesa_juros": [
+    -6054963,
+    -4324306
+   ],
+   "resultado_liquido_juros": [
+    2641169,
+    2081064
+   ],
+   "pdd_dre": [
+    -850605,
+    -523162
+   ],
+   "resultado_apos_pdd": [
+    1790564,
+    1557902
+   ],
+   "tarifas_servicos": [
+    791044,
+    602342
+   ],
+   "despesas_pessoal": [
+    null,
+    null
+   ],
+   "despesas_adm": [
+    -1027881,
+    -844227
+   ],
+   "despesas_tributarias": [
+    -258956,
+    -246284
+   ],
+   "outras_receitas_op": [
+    701361,
+    438475
+   ],
+   "outras_despesas_op": [
+    -340814,
+    -570590
+   ],
+   "resultado_operacional": [
+    1655318,
+    937618
+   ],
+   "resultado_nao_operacional": [
+    0,
+    0
+   ],
+   "resultado_antes_impostos": [
+    1655318,
+    937618
+   ],
+   "impostos": [
+    -597526,
+    -124697
+   ],
+   "lucro_liquido": [
+    1057792,
+    812921
+   ]
+  },
+  "rci": {
+   "receita_juros": [
+    2325378,
+    1909020
+   ],
+   "despesa_juros": [
+    -1463992,
+    -1303697
+   ],
+   "resultado_liquido_juros": [
+    861386,
+    605323
+   ],
+   "pdd_dre": [
+    -29235,
+    -139988
+   ],
+   "resultado_apos_pdd": [
+    861386,
+    605323
+   ],
+   "tarifas_servicos": [
+    12885,
+    97919
+   ],
+   "despesas_pessoal": [
+    -56571,
+    -47791
+   ],
+   "despesas_adm": [
+    -184975,
+    -179361
+   ],
+   "despesas_tributarias": [
+    -53338,
+    -44319
+   ],
+   "outras_receitas_op": [
+    132970,
+    124226
+   ],
+   "outras_despesas_op": [
+    -110456,
+    -198049
+   ],
+   "resultado_operacional": [
+    601901,
+    357948
+   ],
+   "resultado_nao_operacional": [
+    -17,
+    209
+   ],
+   "resultado_antes_impostos": [
+    601884,
+    358157
+   ],
+   "impostos": [
+    -255773,
+    -118318
+   ],
+   "lucro_liquido": [
+    346111,
+    239839
+   ]
+  }
+ },
+ "funding": {
+  "stla": {
+   "depositos": [
+    13703284,
+    10012353
+   ],
+   "captacao_mercado": [
+    6817128,
+    3679784
+   ],
+   "emprestimos_exterior": [
+    0,
+    0
+   ],
+   "cessao": [
+    128878,
+    null
+   ]
+  },
+  "gm": {
+   "depositos": [
+    5882436,
+    6180136
+   ],
+   "captacao_mercado": [
+    6489610,
+    6379812
+   ],
+   "emprestimos_exterior": [
+    0,
+    0
+   ],
+   "cessao": [
+    null,
+    null
+   ]
+  },
+  "toyota": {
+   "depositos": [
+    3508468,
+    3371790
+   ],
+   "captacao_mercado": [
+    4702189,
+    5079304
+   ],
+   "emprestimos_exterior": [
+    2175311,
+    1817942
+   ],
+   "cessao": [
+    null,
+    null
+   ]
+  },
+  "volks": {
+   "depositos": [
+    30266046,
+    27022920
+   ],
+   "captacao_mercado": [
+    14763710,
+    13283721
+   ],
+   "emprestimos_exterior": [
+    3785093,
+    2737338
+   ],
+   "cessao": [
+    null,
+    null
+   ]
+  },
+  "rci": {
+   "depositos": [
+    2968214,
+    2628937
+   ],
+   "captacao_mercado": [
+    8956043,
+    7685782
+   ],
+   "emprestimos_exterior": [
+    0,
+    0
+   ],
+   "cessao": [
+    null,
+    null
+   ]
+  }
+ },
+ "despesa_captacao": {
+  "toyota": 1104683,
+  "volks": 6054963,
+  "gm": 1621326,
+  "stla": 2140819,
+  "rci": 1428984
+ },
+ "despesa_captacao_nota": "Toyota/Volks/GM: 'Despesas de juros e similares' (DRE), já líquida de ECL. STLA/RCI: linha 'Operações de Captação no Mercado' da Demonstração, que exclui a provisão para perdas esperadas (ECL) e a contribuição ao FGC embutidas na linha consolidada 'Despesas da Intermediação Financeira'.",
+ "fidc_comparativo": [
+  {
+   "banco": "stla",
+   "tem_fidc": true,
+   "tratamento": "4 FIDCs (Vita Auto, MOAB, Mobility I, Mobility II). Balanço de cada FIDC é quase 100% Patrimônio Líquido (ex.: FIDC Vita Auto: Ativo R$2.217,6 milhões, Passivo R$1,0 milhão, PL R$2.216,6 milhões). Cotas de terceiros (ex.: geridas pela Bradesco Asset Management) entram como participação de não controladores (NCI).",
+   "classificacao": "Patrimônio (NCI)",
+   "efeito_pl": 4497201
+  },
+  {
+   "banco": "gm",
+   "tem_fidc": true,
+   "tratamento": "Banco detém 100% das cotas subordinadas/mezanino; cotas seniores de terceiros classificadas como PASSIVO ('Obrigações por emissão de cotas seniores FIDC', R$302,8 milhões em 2024). Fundo descontinuado em dez/2025 (R$0 em 2025).",
+   "classificacao": "Dívida (passivo financeiro)",
+   "efeito_pl": 0
+  },
+  {
+   "banco": "toyota",
+   "tem_fidc": false,
+   "tratamento": "—",
+   "classificacao": "Não possui FIDC.",
+   "efeito_pl": null
+  },
+  {
+   "banco": "volks",
+   "tem_fidc": true,
+   "tratamento": "2 FIDCs (Driver Brasil Six, Driver Master Brasil I). Todo o balanço do(s) FIDC(s) é passivo — Ativo = Passivo = R$1.178,1 milhões (2025), Patrimônio Líquido = R$0. O NCI de R$47,3 milhões (2025) / R$60,6 milhões (2024) que aparece no PL da Volkswagen NÃO vem do FIDC — vem de 3 empresas que o Banco consolida por controle operacional (poder de decisão sobre políticas financeiras/negócios) sem participação societária direta: Volkswagen Serviços Ltda., Volkswagen Corretora de Seguros Ltda. e Volkswagen Administradora de Negócios Ltda. Confirmação: a soma do lucro líquido dessas 3 empresas em 2025 (-R$10,4 mi + R$71,0 mi + R$26,1 mi = R$86,7 mi) bate exatamente com a 'Participação dos Não Controladores' da DRE (R$86,7 mi) — diferença zero. O Consórcio Nacional Volkswagen (100% do Banco) fica corretamente de fora dessa soma.",
+   "classificacao": "Dívida (FIDC) / Patrimônio (outras 3 empresas, NCI pequeno)",
+   "efeito_pl": 47339
+  },
+  {
+   "banco": "rci",
+   "tem_fidc": true,
+   "tratamento": "FIDC Venda de Veículos — 100% das cotas pertencem ao próprio Banco RCI Brasil, sem investidores terceiros.",
+   "classificacao": "Sem terceiros (100% intragrupo)",
+   "efeito_pl": 0
+  }
+ ],
+ "partes_relacionadas": {
+  "toyota": {
+   "valor": null,
+   "pct_depositos": null,
+   "detalhe": "Não identificada captação relevante via depósitos com partes relacionadas. As transações com partes relacionadas (Nota 14) limitam-se a saldos residuais de outros ativos/passivos financeiros com Toyota do Brasil, Toyota Motor Credit Corp. e Toyota Financial Services Corp. — sem depósitos a prazo da montadora."
+  },
+  "volks": {
+   "valor": 10201321,
+   "pct_depositos": 33.7,
+   "detalhe": "Captação relevante via Depósitos a Prazo de empresas do grupo (Nota 28): Volkswagen do Brasil Indústria de Veículos R$7.008.735; AUDI Brasil Distribuidora R$1.002.507; LM Transportes Interestaduais R$1.011.097; Simple Way Locações R$569.091; Porsche Brasil Importadora R$510.318; Volkswagen Participações R$66.472; Volkswagen Truck & Bus R$23.187; São Bernardo Adm. de Créditos R$9.914. Total ≈ R$10.201.321 mil. Adicionalmente, Letras Financeiras Subordinadas com a Volkswagen do Brasil (R$1.307.953) e Empréstimo no Exterior com a Volkswagen Finance Overseas B.V. (R$703.675)."
+  },
+  "gm": {
+   "valor": 324250,
+   "pct_depositos": 5.5,
+   "detalhe": "Captações em depósitos a prazo com partes relacionadas (Nota 16): R$324.250 mil (2025), sendo R$8.187 mil com a controladora e R$316.063 mil com outras partes relacionadas (concessionárias/demais ligadas ao Grupo GM)."
+  },
+  "stla": {
+   "valor": 3540656,
+   "pct_depositos": 25.8,
+   "detalhe": "Depósitos a Prazo com partes relacionadas (Nota 16.b): R$3.540.656 mil, dos quais R$3.534.594 mil com a Stellantis Automóveis Brasil Ltda. (montadora) e R$6.062 mil com a Stellantis Corretora de Seguros e Serviços Ltda."
+  },
+  "rci": {
+   "valor": null,
+   "pct_depositos": null,
+   "detalhe": "Não identificada captação relevante via depósitos com montadoras (Renault/Nissan). A Nota 20 mostra apenas 'Valores a Pagar a Sociedades Ligadas' de R$270.290 mil, majoritariamente com os controladores (Banco Santander R$97.556 mil; RCI Banque R$147.405 mil) e saldos residuais com Renault do Brasil e Nissan do Brasil — sem caracterização de depósitos a prazo das montadoras."
+  }
+ },
+ "roe_note": "ROE = Lucro líquido do exercício / Patrimônio líquido médio (quando há 2 períodos) ou PL pontual (quando não há comparativo).",
+ "dre_bacen": {
+  "2025": {
+   "stla": {
+    "ativo_total": 30229068,
+    "a": 882246,
+    "b": 188044,
+    "c": 3458218,
+    "d": 0,
+    "e": 0,
+    "f": -229033,
+    "g": -2922746,
+    "h": 0,
+    "i": 54163,
+    "j": 109793,
+    "k": 1540682,
+    "l": 52,
+    "m": 81158,
+    "n": 119804,
+    "o": -127539,
+    "p": -287465,
+    "q": 0,
+    "r": -103725,
+    "s": 0,
+    "t": 72133,
+    "u": -193671,
+    "v": -439305,
+    "w": 1101429,
+    "x": -249692,
+    "y": -14541,
+    "z": 837198
+   },
+   "gm": {
+    "ativo_total": 16954653,
+    "a": 83151,
+    "b": 0,
+    "c": 2542356,
+    "d": 13207,
+    "e": 0,
+    "f": -226415,
+    "g": -1565580,
+    "h": 0,
+    "i": 0,
+    "j": 0,
+    "k": 846720,
+    "l": 0,
+    "m": 0,
+    "n": 395347,
+    "o": -232473,
+    "p": -401361,
+    "q": 0,
+    "r": -108741,
+    "s": 48014,
+    "t": 177272,
+    "u": -162541,
+    "v": -284484,
+    "w": 562237,
+    "x": -121597,
+    "y": -39472,
+    "z": 401168
+   },
+   "toyota": {
+    "ativo_total": 12221951,
+    "a": 178147,
+    "b": 0,
+    "c": 2119988,
+    "d": 1436,
+    "e": 0,
+    "f": -149350,
+    "g": -904911,
+    "h": 0,
+    "i": -377813,
+    "j": 0,
+    "k": 867497,
+    "l": 0,
+    "m": 0,
+    "n": 66515,
+    "o": -96423,
+    "p": -383801,
+    "q": 1606,
+    "r": -64950,
+    "s": 19258,
+    "t": 121828,
+    "u": -63485,
+    "v": -399452,
+    "w": 468044,
+    "x": -130145,
+    "y": -24984,
+    "z": 312915
+   },
+   "volks": {
+    "ativo_total": 59029963,
+    "a": 185688,
+    "b": 7345,
+    "c": 8371623,
+    "d": 33852,
+    "e": 0,
+    "f": -1039951,
+    "g": -7046489,
+    "h": -101968,
+    "i": -176287,
+    "j": 738491,
+    "k": 972304,
+    "l": 0,
+    "m": 1154,
+    "n": 253978,
+    "o": -6832,
+    "p": -737167,
+    "q": -6,
+    "r": -141539,
+    "s": 0,
+    "t": 2101210,
+    "u": -1648232,
+    "v": -177434,
+    "w": 794869,
+    "x": -223539,
+    "y": 0,
+    "z": 571330
+   },
+   "rci": {
+    "ativo_total": null,
+    "a": null,
+    "b": null,
+    "c": null,
+    "d": null,
+    "e": null,
+    "f": null,
+    "g": null,
+    "h": null,
+    "i": null,
+    "j": null,
+    "k": null,
+    "l": null,
+    "m": null,
+    "n": null,
+    "o": null,
+    "p": null,
+    "q": null,
+    "r": null,
+    "s": null,
+    "t": null,
+    "u": null,
+    "v": null,
+    "w": null,
+    "x": null,
+    "y": null,
+    "z": null
+   }
+  },
+  "2025_1s": {
+   "volks": {
+    "ativo_total": 56651353,
+    "a": 42579,
+    "b": 873,
+    "c": 4030175,
+    "d": 15656,
+    "e": 0,
+    "f": -707990,
+    "g": -3352086,
+    "h": 0,
+    "i": -195295,
+    "j": 333482,
+    "k": 167393,
+    "l": 0,
+    "m": 1020,
+    "n": 115647,
+    "o": -3393,
+    "p": -300349,
+    "q": -6,
+    "r": -76664,
+    "s": 0,
+    "t": 1261869,
+    "u": -723010,
+    "v": 275113,
+    "w": 442506,
+    "x": -219071,
+    "y": 0,
+    "z": 223435
+   },
+   "stla": {
+    "ativo_total": 21415460,
+    "a": 337167,
+    "b": 86207,
+    "c": 1429202,
+    "d": 0,
+    "e": 0,
+    "f": -96727,
+    "g": -1211894,
+    "h": 0,
+    "i": 12162,
+    "j": 59525,
+    "k": 615640,
+    "l": 21,
+    "m": 12035,
+    "n": 62455,
+    "o": -60634,
+    "p": -109634,
+    "q": 0,
+    "r": -44753,
+    "s": 0,
+    "t": 28306,
+    "u": -62870,
+    "v": -175095,
+    "w": 440566,
+    "x": -158272,
+    "y": -7094,
+    "z": 275201
+   },
+   "gm": {
+    "ativo_total": 15276938,
+    "a": 42168,
+    "b": 0,
+    "c": 1248325,
+    "d": 5349,
+    "e": 0,
+    "f": -92669,
+    "g": -739591,
+    "h": 0,
+    "i": 0,
+    "j": 0,
+    "k": 463582,
+    "l": 0,
+    "m": 0,
+    "n": 189180,
+    "o": -109381,
+    "p": -213300,
+    "q": 0,
+    "r": -52819,
+    "s": 23723,
+    "t": 82640,
+    "u": -73396,
+    "v": -153354,
+    "w": 310228,
+    "x": -112522,
+    "y": -18143,
+    "z": 179563
+   },
+   "toyota": {
+    "ativo_total": 12214397,
+    "a": 96463,
+    "b": 0,
+    "c": 1033157,
+    "d": 934,
+    "e": 0,
+    "f": -81774,
+    "g": -335673,
+    "h": 0,
+    "i": -302899,
+    "j": 0,
+    "k": 410208,
+    "l": 0,
+    "m": 0,
+    "n": 28347,
+    "o": -44241,
+    "p": -186433,
+    "q": 667,
+    "r": -31949,
+    "s": 6371,
+    "t": 54260,
+    "u": -27524,
+    "v": -200502,
+    "w": 209706,
+    "x": -90713,
+    "y": -11164,
+    "z": 107829
+   },
+   "rci": {
+    "ativo_total": null,
+    "a": null,
+    "b": null,
+    "c": null,
+    "d": null,
+    "e": null,
+    "f": null,
+    "g": null,
+    "h": null,
+    "i": null,
+    "j": null,
+    "k": null,
+    "l": null,
+    "m": null,
+    "n": null,
+    "o": null,
+    "p": null,
+    "q": null,
+    "r": null,
+    "s": null,
+    "t": null,
+    "u": null,
+    "v": null,
+    "w": null,
+    "x": null,
+    "y": null,
+    "z": null
+   }
+  },
+  "2025_2s": {
+   "volks": {
+    "ativo_total": 59029963,
+    "a": 143109,
+    "b": 6472,
+    "c": 4341448,
+    "d": 18196,
+    "e": 0,
+    "f": -331961,
+    "g": -3694403,
+    "h": -101968,
+    "i": 19008,
+    "j": 405009,
+    "k": 804911,
+    "l": 0,
+    "m": 134,
+    "n": 138331,
+    "o": -3439,
+    "p": -436818,
+    "q": 0,
+    "r": -64875,
+    "s": 0,
+    "t": 839341,
+    "u": -925222,
+    "v": -452547,
+    "w": 352363,
+    "x": -4468,
+    "y": 0,
+    "z": 347895
+   },
+   "stla": {
+    "ativo_total": 30229068,
+    "a": 545079,
+    "b": 101837,
+    "c": 2029016,
+    "d": 0,
+    "e": 0,
+    "f": -132306,
+    "g": -1710852,
+    "h": 0,
+    "i": 42001,
+    "j": 50268,
+    "k": 925042,
+    "l": 31,
+    "m": 69123,
+    "n": 57349,
+    "o": -66905,
+    "p": -177831,
+    "q": 0,
+    "r": -58972,
+    "s": 0,
+    "t": 43827,
+    "u": -130801,
+    "v": -264210,
+    "w": 660863,
+    "x": -91420,
+    "y": -7447,
+    "z": 561997
+   },
+   "gm": {
+    "ativo_total": 16954653,
+    "a": 40983,
+    "b": 0,
+    "c": 1294031,
+    "d": 7858,
+    "e": 0,
+    "f": -133746,
+    "g": -825989,
+    "h": 0,
+    "i": 0,
+    "j": 0,
+    "k": 383138,
+    "l": 0,
+    "m": 0,
+    "n": 206167,
+    "o": -123092,
+    "p": -188061,
+    "q": 0,
+    "r": -55922,
+    "s": 24291,
+    "t": 94632,
+    "u": -89145,
+    "v": -131130,
+    "w": 252009,
+    "x": -9075,
+    "y": -21329,
+    "z": 221605
+   },
+   "toyota": {
+    "ativo_total": 12221951,
+    "a": 81684,
+    "b": 0,
+    "c": 1086831,
+    "d": 502,
+    "e": 0,
+    "f": -67576,
+    "g": -569238,
+    "h": 0,
+    "i": -74914,
+    "j": 0,
+    "k": 457289,
+    "l": 0,
+    "m": 0,
+    "n": 38168,
+    "o": -52182,
+    "p": -197368,
+    "q": 939,
+    "r": -33001,
+    "s": 12887,
+    "t": 67568,
+    "u": -35961,
+    "v": -198950,
+    "w": 258338,
+    "x": -39432,
+    "y": -13820,
+    "z": 205086
+   },
+   "rci": {
+    "ativo_total": null,
+    "a": null,
+    "b": null,
+    "c": null,
+    "d": null,
+    "e": null,
+    "f": null,
+    "g": null,
+    "h": null,
+    "i": null,
+    "j": null,
+    "k": null,
+    "l": null,
+    "m": null,
+    "n": null,
+    "o": null,
+    "p": null,
+    "q": null,
+    "r": null,
+    "s": null,
+    "t": null,
+    "u": null,
+    "v": null,
+    "w": null,
+    "x": null,
+    "y": null,
+    "z": null
+   }
+  },
+  "2026-T1": {
+   "stla": {
+    "ativo_total": 32040992,
+    "a": 294339,
+    "b": 46540,
+    "c": 1234818,
+    "d": 0,
+    "e": 0,
+    "f": -149674,
+    "g": -931991,
+    "h": 0,
+    "i": 19582,
+    "j": 20552,
+    "k": 534166,
+    "l": -169,
+    "m": 38512,
+    "n": 26214,
+    "o": -35451,
+    "p": -103764,
+    "q": 0,
+    "r": -28740,
+    "s": 0,
+    "t": 12171,
+    "u": -56087,
+    "v": -147144,
+    "w": 386853,
+    "x": -66151,
+    "y": -3808,
+    "z": 316893
+   },
+   "gm": {
+    "ativo_total": 16773226,
+    "a": 16168,
+    "b": 859,
+    "c": 673937,
+    "d": 3766,
+    "e": 0,
+    "f": -77710,
+    "g": -417131,
+    "h": 0,
+    "i": 0,
+    "j": 0,
+    "k": 199889,
+    "l": 0,
+    "m": 0,
+    "n": 104791,
+    "o": -63790,
+    "p": -101656,
+    "q": 0,
+    "r": -32352,
+    "s": 6003,
+    "t": 225715,
+    "u": -34094,
+    "v": 104618,
+    "w": 304507,
+    "x": -76068,
+    "y": -11812,
+    "z": 216626
+   },
+   "toyota": {
+    "ativo_total": 12489254,
+    "a": 29257,
+    "b": 0,
+    "c": 539704,
+    "d": 80,
+    "e": 0,
+    "f": -45979,
+    "g": -150274,
+    "h": 0,
+    "i": -169410,
+    "j": 0,
+    "k": 203377,
+    "l": 0,
+    "m": 0,
+    "n": 22095,
+    "o": -25020,
+    "p": -102106,
+    "q": 1,
+    "r": -16715,
+    "s": 6525,
+    "t": 34011,
+    "u": -15350,
+    "v": -96559,
+    "w": 106817,
+    "x": -41226,
+    "y": -7408,
+    "z": 58183
+   },
+   "volks": {
+    "ativo_total": 58038922,
+    "a": 87637,
+    "b": 8270,
+    "c": 2182735,
+    "d": 10614,
+    "e": 0,
+    "f": -462719,
+    "g": -1761754,
+    "h": -49145,
+    "i": -85245,
+    "j": 182119,
+    "k": 112513,
+    "l": 0,
+    "m": 2,
+    "n": 76110,
+    "o": -2581,
+    "p": -177002,
+    "q": -4,
+    "r": -39451,
+    "s": 0,
+    "t": 405582,
+    "u": -461740,
+    "v": -199084,
+    "w": -86571,
+    "x": -25311,
+    "y": 0,
+    "z": -111882
+   },
+   "rci": {
+    "ativo_total": null,
+    "a": null,
+    "b": null,
+    "c": null,
+    "d": null,
+    "e": null,
+    "f": null,
+    "g": null,
+    "h": null,
+    "i": null,
+    "j": null,
+    "k": null,
+    "l": null,
+    "m": null,
+    "n": null,
+    "o": null,
+    "p": null,
+    "q": null,
+    "r": null,
+    "s": null,
+    "t": null,
+    "u": null,
+    "v": null,
+    "w": null,
+    "x": null,
+    "y": null,
+    "z": null
+   }
+  },
+  "2025-T1": {
+   "volks": {
+    "ativo_total": 54797773,
+    "a": 20185,
+    "b": 420,
+    "c": 1932762,
+    "d": 7650,
+    "e": 0,
+    "f": -262216,
+    "g": -1541897,
+    "h": 0,
+    "i": -96789,
+    "j": 165856,
+    "k": 225972,
+    "l": 0,
+    "m": 408,
+    "n": 56123,
+    "o": -1690,
+    "p": -136439,
+    "q": -3,
+    "r": -38819,
+    "s": 0,
+    "t": 449980,
+    "u": -312855,
+    "v": 16706,
+    "w": 242677,
+    "x": 156501,
+    "y": 0,
+    "z": 399178
+   },
+   "stla": {
+    "ativo_total": 20914472,
+    "a": 28169,
+    "b": 38825,
+    "c": 680412,
+    "d": 0,
+    "e": 0,
+    "f": -33909,
+    "g": -435763,
+    "h": 0,
+    "i": 667,
+    "j": 31781,
+    "k": 310182,
+    "l": 18,
+    "m": 2889,
+    "n": 30504,
+    "o": -28461,
+    "p": -49884,
+    "q": 0,
+    "r": -21404,
+    "s": 0,
+    "t": 6829,
+    "u": -34747,
+    "v": -94273,
+    "w": 215926,
+    "x": -67782,
+    "y": -3780,
+    "z": 144364
+   },
+   "gm": {
+    "ativo_total": 15520634,
+    "a": 22032,
+    "b": 0,
+    "c": 641589,
+    "d": 2740,
+    "e": 0,
+    "f": -35675,
+    "g": -368638,
+    "h": 0,
+    "i": 0,
+    "j": 0,
+    "k": 262047,
+    "l": 0,
+    "m": 0,
+    "n": 95182,
+    "o": -52451,
+    "p": -116578,
+    "q": 0,
+    "r": -26788,
+    "s": 13476,
+    "t": 41268,
+    "u": -35590,
+    "v": -81482,
+    "w": 180565,
+    "x": -67979,
+    "y": -10202,
+    "z": 102384
+   },
+   "toyota": {
+    "ativo_total": 11974808,
+    "a": 47495,
+    "b": 0,
+    "c": 508671,
+    "d": 612,
+    "e": 0,
+    "f": -41706,
+    "g": -151039,
+    "h": 0,
+    "i": -167275,
+    "j": 0,
+    "k": 196758,
+    "l": 0,
+    "m": 0,
+    "n": 13051,
+    "o": -22758,
+    "p": -94342,
+    "q": 335,
+    "r": -14906,
+    "s": 1681,
+    "t": 31444,
+    "u": -13893,
+    "v": -99388,
+    "w": 97370,
+    "x": -37824,
+    "y": -7975,
+    "z": 51571
+   },
+   "rci": {
+    "ativo_total": null,
+    "a": null,
+    "b": null,
+    "c": null,
+    "d": null,
+    "e": null,
+    "f": null,
+    "g": null,
+    "h": null,
+    "i": null,
+    "j": null,
+    "k": null,
+    "l": null,
+    "m": null,
+    "n": null,
+    "o": null,
+    "p": null,
+    "q": null,
+    "r": null,
+    "s": null,
+    "t": null,
+    "u": null,
+    "v": null,
+    "w": null,
+    "x": null,
+    "y": null,
+    "z": null
+   }
+  },
+  "2024": {
+   "stla": {
+    "ativo_total": null,
+    "a": null,
+    "b": 344306,
+    "c": 2021005,
+    "d": 0,
+    "e": null,
+    "f": -106969,
+    "g": -1345835,
+    "h": null,
+    "i": 2333,
+    "j": null,
+    "k": 914840,
+    "l": null,
+    "m": 111529,
+    "n": 149535,
+    "o": -106721,
+    "p": -162950,
+    "q": null,
+    "r": -69003,
+    "s": 0,
+    "t": 50610,
+    "u": -230277,
+    "v": -257278,
+    "w": 651076,
+    "x": -176648,
+    "y": -10440,
+    "z": 463987
+   },
+   "gm": {
+    "ativo_total": null,
+    "a": null,
+    "b": 62135,
+    "c": 2142888,
+    "d": 74348,
+    "e": null,
+    "f": -193077,
+    "g": -1019893,
+    "h": null,
+    "i": 0,
+    "j": null,
+    "k": 1002848,
+    "l": null,
+    "m": 99197,
+    "n": 318111,
+    "o": -215246,
+    "p": -628656,
+    "q": null,
+    "r": -103016,
+    "s": 36693,
+    "t": 254776,
+    "u": -118772,
+    "v": -356912,
+    "w": 656938,
+    "x": -176395,
+    "y": -39996,
+    "z": 440547
+   },
+   "toyota": {
+    "ativo_total": null,
+    "a": null,
+    "b": 123060,
+    "c": 2033633,
+    "d": 5793,
+    "e": null,
+    "f": -142937,
+    "g": -928656,
+    "h": null,
+    "i": 356977,
+    "j": null,
+    "k": 991467,
+    "l": null,
+    "m": 79937,
+    "n": 37425,
+    "o": -93769,
+    "p": -379810,
+    "q": null,
+    "r": -60858,
+    "s": 15430,
+    "t": 131984,
+    "u": -179968,
+    "v": -449629,
+    "w": 497217,
+    "x": -160055,
+    "y": -22724,
+    "z": 314438
+   },
+   "volks": {
+    "ativo_total": null,
+    "a": null,
+    "b": 217401,
+    "c": 7056395,
+    "d": 24723,
+    "e": null,
+    "f": -1295353,
+    "g": -4078132,
+    "h": null,
+    "i": 131941,
+    "j": null,
+    "k": 880868,
+    "l": null,
+    "m": 308624,
+    "n": 183150,
+    "o": -5492,
+    "p": -550089,
+    "q": null,
+    "r": -206451,
+    "s": 0,
+    "t": 1138899,
+    "u": -1402802,
+    "v": -534159,
+    "w": 290190,
+    "x": 154587,
+    "y": 0,
+    "z": 444777
+   },
+   "rci": {
+    "ativo_total": null,
+    "a": null,
+    "b": null,
+    "c": null,
+    "d": null,
+    "e": null,
+    "f": null,
+    "g": null,
+    "h": null,
+    "i": null,
+    "j": null,
+    "k": null,
+    "l": null,
+    "m": null,
+    "n": null,
+    "o": null,
+    "p": null,
+    "q": null,
+    "r": null,
+    "s": null,
+    "t": null,
+    "u": null,
+    "v": null,
+    "w": null,
+    "x": null,
+    "y": null,
+    "z": null
+   }
+  },
+  "2026-1S": {
+   "stla": {
+    "ativo_total": 35052863,
+    "a": 186554,
+    "b": 47349,
+    "c": 2387940,
+    "d": 0,
+    "e": 204,
+    "f": -255186,
+    "g": -1531633,
+    "h": 0,
+    "i": 38742,
+    "j": 36968,
+    "k": 910938,
+    "l": -95,
+    "m": 82425,
+    "n": 54550,
+    "o": -75409,
+    "p": -188581,
+    "q": 0,
+    "r": -60214,
+    "s": 0,
+    "t": 27315,
+    "u": -128966,
+    "v": -288880,
+    "w": 621962,
+    "x": -180949,
+    "y": -7972,
+    "z": 433042
+   },
+   "gm": {
+    "ativo_total": 17819178,
+    "a": 37787,
+    "b": 2116,
+    "c": 1358912,
+    "d": 7533,
+    "e": 0,
+    "f": -167792,
+    "g": -836678,
+    "h": 0,
+    "i": 0,
+    "j": 0,
+    "k": 401878,
+    "l": 0,
+    "m": 0,
+    "n": 204561,
+    "o": -127412,
+    "p": -217437,
+    "q": 0,
+    "r": -60611,
+    "s": 13031,
+    "t": 274247,
+    "u": -76432,
+    "v": 9947,
+    "w": 411825,
+    "x": -111622,
+    "y": -22875,
+    "z": 277328
+   },
+   "toyota": {
+    "ativo_total": 13045095,
+    "a": 52659,
+    "b": 0,
+    "c": 1101149,
+    "d": 99,
+    "e": 0,
+    "f": -87126,
+    "g": -378672,
+    "h": 0,
+    "i": -271095,
+    "j": 0,
+    "k": 417014,
+    "l": 0,
+    "m": 0,
+    "n": 46119,
+    "o": -48919,
+    "p": -186983,
+    "q": 1118,
+    "r": -34826,
+    "s": 13761,
+    "t": 63911,
+    "u": -27788,
+    "v": -173608,
+    "w": 243407,
+    "x": -94441,
+    "y": -10807,
+    "z": 138158
+   },
+   "volks": {
+    "ativo_total": 60906606,
+    "a": 173230,
+    "b": 16423,
+    "c": 4472329,
+    "d": 24104,
+    "e": 0,
+    "f": -921821,
+    "g": -3561037,
+    "h": -97260,
+    "i": -117470,
+    "j": 347682,
+    "k": 336179,
+    "l": 0,
+    "m": 11,
+    "n": 151196,
+    "o": -4434,
+    "p": -370090,
+    "q": -11,
+    "r": -80589,
+    "s": 0,
+    "t": 775736,
+    "u": -927003,
+    "v": -455184,
+    "w": -119005,
+    "x": -84086,
+    "y": 0,
+    "z": -203091
+   },
+   "rci": {
+    "ativo_total": null,
+    "a": null,
+    "b": null,
+    "c": null,
+    "d": null,
+    "e": null,
+    "f": null,
+    "g": null,
+    "h": null,
+    "i": null,
+    "j": null,
+    "k": null,
+    "l": null,
+    "m": null,
+    "n": null,
+    "o": null,
+    "p": null,
+    "q": null,
+    "r": null,
+    "s": null,
+    "t": null,
+    "u": null,
+    "v": null,
+    "w": null,
+    "x": null,
+    "y": null,
+    "z": null
+   }
+  }
+ },
+ "dre_bacen_years": [
+  "2026-1S",
+  "2026-T1",
+  "2025",
+  "2025-T1",
+  "2024"
+ ],
+ "dre_bacen_periodo": "Ano completo 2025 = soma de dois arquivos semestrais do Bacen/IF.data (1º semestre: 01/2025-06/2025; 2º semestre: 07/2025-12/2025). Ativo Total usa o saldo de 12/2025 (ponta), sem soma.",
+ "bacen_bs": {
+  "stla": {
+   "ativo_total": [
+    30229068,
+    19620583,
+    32040992,
+    20914472,
+    35052863
+   ],
+   "carteira_bruta": [
+    26610467,
+    17103213,
+    27964061,
+    18007553,
+    30286296
+   ],
+   "carteira_liquida": [
+    26357050,
+    16935133,
+    27617786,
+    17826645,
+    29885744
+   ],
+   "passivo_total": [
+    30229068,
+    19620583,
+    32040992,
+    20914472,
+    35052863
+   ],
+   "patrimonio_liquido": [
+    8055912,
+    4332266,
+    8451610,
+    4877867,
+    8899853
+   ],
+   "depositos": [
+    14103285,
+    10012443,
+    15611540,
+    9733628,
+    16193172
+   ],
+   "captacoes": [
+    20920413,
+    13692227,
+    22732386,
+    14751103,
+    25411466
+   ],
+   "outras_op_credito_bruta": [
+    244554,
+    null,
+    151740,
+    108826,
+    172195
+   ],
+   "arrendamento_bruto": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "gm": {
+   "ativo_total": [
+    16954653,
+    17324741,
+    16773226,
+    15520634,
+    17819178
+   ],
+   "carteira_bruta": [
+    13832312,
+    14172960,
+    13491972,
+    12555082,
+    14114140
+   ],
+   "carteira_liquida": [
+    13465029,
+    13916965,
+    13092855,
+    12302133,
+    13677100
+   ],
+   "passivo_total": [
+    16954653,
+    17324741,
+    16773226,
+    15520634,
+    17819178
+   ],
+   "patrimonio_liquido": [
+    2644741,
+    2894024,
+    2861367,
+    3007873,
+    2922069
+   ],
+   "depositos": [
+    5928088,
+    6263270,
+    5262795,
+    4679342,
+    6074149
+   ],
+   "captacoes": [
+    12417698,
+    12340330,
+    11849454,
+    10884534,
+    12615298
+   ],
+   "outras_op_credito_bruta": [
+    0,
+    null,
+    0,
+    0,
+    0
+   ],
+   "arrendamento_bruto": [
+    97638,
+    309,
+    92036,
+    77249,
+    96243
+   ]
+  },
+  "toyota": {
+   "ativo_total": [
+    12221951,
+    12047848,
+    12489254,
+    11974808,
+    13045095
+   ],
+   "carteira_bruta": [
+    10591332,
+    10487010,
+    10795588,
+    10248150,
+    11120997
+   ],
+   "carteira_liquida": [
+    10432973,
+    10264814,
+    10631207,
+    10070473,
+    10952824
+   ],
+   "passivo_total": [
+    12221951,
+    12047848,
+    12489254,
+    11974808,
+    13045095
+   ],
+   "patrimonio_liquido": [
+    1282500,
+    1478985,
+    1302335,
+    1498139,
+    1396120
+   ],
+   "depositos": [
+    3547539,
+    3392590,
+    3002109,
+    3562331,
+    3366298
+   ],
+   "captacoes": [
+    10425039,
+    10289836,
+    10479615,
+    10037127,
+    10991678
+   ],
+   "outras_op_credito_bruta": [
+    0,
+    null,
+    0,
+    0,
+    0
+   ],
+   "arrendamento_bruto": [
+    87,
+    -160,
+    47,
+    462,
+    43
+   ]
+  },
+  "volks": {
+   "ativo_total": [
+    59029963,
+    53195711,
+    58038922,
+    54797773,
+    60906606
+   ],
+   "carteira_bruta": [
+    47475392,
+    43425717,
+    48123000,
+    45459766,
+    49088807
+   ],
+   "carteira_liquida": [
+    44720411,
+    41719101,
+    44916651,
+    43413492,
+    45466705
+   ],
+   "passivo_total": [
+    59029963,
+    53195711,
+    58038922,
+    54797773,
+    60906606
+   ],
+   "patrimonio_liquido": [
+    6784091,
+    5227313,
+    8786294,
+    5438282,
+    8469507
+   ],
+   "depositos": [
+    30457625,
+    27127230,
+    26558654,
+    26670623,
+    29619645
+   ],
+   "captacoes": [
+    47616563,
+    43025764,
+    44499848,
+    44049609,
+    47526237
+   ],
+   "outras_op_credito_bruta": [
+    4358142,
+    null,
+    3321572,
+    2376881,
+    4791665
+   ],
+   "arrendamento_bruto": [
+    48826,
+    350,
+    81973,
+    50889,
+    92183
+   ]
+  },
+  "rci": {
+   "ativo_total": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "carteira_bruta": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "carteira_liquida": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "passivo_total": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "patrimonio_liquido": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "depositos": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "captacoes": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "outras_op_credito_bruta": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "arrendamento_bruto": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  }
+ },
+ "bacen_bs_years": [
+  2025,
+  2024,
+  "2026-T1",
+  "2025-T1",
+  "2026-1S"
+ ],
+ "bacen_bs_nota": "Fonte: Bacen — IF.data, arquivos IF.data_ativo_2025/2024 e IF.data_passivo_2025/2024. Carteira de Crédito Bacen = linha 'Operações de Crédito' (bruta e líquida de perda esperada), a única com granularidade comparável entre 2025 e 2024 — não inclui 'Outras Operações com Característica de Concessão de Crédito', categoria nova em 2025 (Res. 4.966/21) e não disponível no layout de 2024.",
+ "dre_bacen_2024_nota": "Esses arquivos usam um layout mais antigo do Bacen (anterior à Res. 4.966/21), com menos linhas detalhadas — por isso 'Rendas de Aplicações Interfinanceiras (a)', 'Rendas de Outras Op. c/ Concessão de Crédito (e)', 'Despesas de Instrumentos de Dívida Elegíveis a Capital (h)', 'Resultado com Transações de Pagamento (l)' e 'Resultado com Perdas Esperadas de Outras Operações (q)' não têm equivalente direto em 2024 e aparecem como N/D. Divergência relevante identificada: para a Volkswagen, o Lucro Líquido 2024 do Bacen (R$444,8 mi) diverge fortemente do valor da DF (R$812,9 mi, -45%) — gap bem maior que o observado em STLA/GM/Toyota (1 a 5%, dentro do esperado por diferença IFRS x COSIF). Hipótese em avaliação pelo usuário: pode estar relacionado à venda/transferência das operações de caminhões e ônibus para o Banco Traton em 2025, que já identificamos como um efeito não recorrente relevante na DF da Volkswagen (ver Key Highlights). Origem exata ainda não confirmada; tratar com cautela."
+}</script>
+<script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============ NÚCLEO ============
+const DATA = JSON.parse(document.getElementById('data-json').textContent);
+const ORDER = DATA.order; // stla, gm, toyota, volks, rci
+const META = DATA.meta;
+
+function fmtM(v){ // milhares -> R$ milhões, 1 casa
+  if(v===null||v===undefined) return '<span class="nd">N/D</span>';
+  const m = v/1000;
+  return m.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+}
+function fmtMcell(v){
+  if(v===null||v===undefined) return '<span class="nd">N/D</span>';
+  const m = v/1000;
+  const cls = m<0? 'valneg':'';
+  return `<span class="${cls}">${m.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}</span>`;
+}
+function fmtPct(v,dec=1){
+  if(v===null||v===undefined||isNaN(v)) return '<span class="nd">N/D</span>';
+  const cls = v<0?'neg':'pos';
+  return `<span class="${cls}">${v.toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec})}%</span>`;
+}
+function safeDiv(a,b){ if(a===null||a===undefined||b===null||b===undefined||b===0) return null; return a/b; }
+function avg(a,b){ if(a===null||a===undefined) return null; if(b===null||b===undefined) return a; return (a+b)/2; }
+
+// Equity ajustado da STLA = PL atribuível aos controladores + NCI do Banco Stellantis (exclui NCI de terceiros dos FIDCs)
+// Média (2025+2024)/2, confirmado com a Nota 14.e — Participações Não Controladoras (Relatório Prudencial 2024, pág. 32)
+function stlaAdjustedEquity(yearIdx){
+  const p = DATA.pl_breakdown.stla;
+  const eq2025 = p.atribuivel_controladores[0] + p.nci_banco_stellantis[0];
+  const eq2024 = p.atribuivel_controladores[1] + p.nci_banco_stellantis[1];
+  if(yearIdx===0) return eq2025;
+  if(yearIdx===1) return eq2024;
+  return avg(eq2025, eq2024);
+}
+// ROE padrão do dashboard: para STLA usa equity ajustado médio (exclui FIDC); demais bancos usam PL médio (2025+2024)/2
+function roeFor(k){
+  if(k==='stla'){ return safeDiv(DATA.dre.stla.lucro_liquido[0], stlaAdjustedEquity())*100; }
+  return safeDiv(DATA.dre[k].lucro_liquido[0], avg(DATA.bs[k].pl[0],DATA.bs[k].pl[1]))*100;
+}
+// Fator de anualização por período: trimestre ×4 (÷3×12), semestre ×2 (÷6×12), ano cheio ×1.
+function bacenAnnualFactor(period){
+  if(period==='2026-T1' || period==='2025-T1') return 4;
+  if(period==='2026-1S') return 2;
+  return 1;
+}
+// ROAE base Bacen: Lucro Líquido (DRE Bacen) / PL Médio Bacen. Sem ajuste FIDC da STLA
+// (a granularidade por entidade do NCI não está disponível na fonte Bacen).
+// period: '2025' (padrão) usa lucro anual 2025 / PL médio (2025+2024)/2.
+// '2024' usa lucro anual 2024 (soma dos semestres) / PL pontual 2024 (sem 2023 disponível para média).
+// '2026-T1' usa lucro do trimestre anualizado (×4) / PL médio (2025+1T2026)/2.
+// '2025-T1' usa lucro do trimestre anualizado (×4) / PL médio (2024+1T2025)/2.
+// '2026-1S' usa lucro do semestre anualizado (×2) / PL médio (2025+1S2026)/2.
+function roaeForBacen(k, period){
+  if(period==='2026-1S'){
+    const bdre = DATA.dre_bacen['2026-1S'][k];
+    const lucro = (bdre && bdre.z!==null) ? bdre.z*2 : null;
+    const plMedio = avg(DATA.bacen_bs[k].patrimonio_liquido[0], DATA.bacen_bs[k].patrimonio_liquido[4]);
+    const p = safeDiv(lucro, plMedio);
+    return p===null? null : p*100;
+  }
+  if(period==='2026-T1'){
+    const bdre = DATA.dre_bacen['2026-T1'][k];
+    const lucro = (bdre && bdre.z!==null) ? bdre.z*4 : null;
+    const plMedio = avg(DATA.bacen_bs[k].patrimonio_liquido[0], DATA.bacen_bs[k].patrimonio_liquido[2]);
+    const p = safeDiv(lucro, plMedio);
+    return p===null? null : p*100;
+  }
+  if(period==='2025-T1'){
+    const bdre = DATA.dre_bacen['2025-T1'][k];
+    const lucro = (bdre && bdre.z!==null) ? bdre.z*4 : null;
+    const plMedio = avg(DATA.bacen_bs[k].patrimonio_liquido[1], DATA.bacen_bs[k].patrimonio_liquido[3]);
+    const p = safeDiv(lucro, plMedio);
+    return p===null? null : p*100;
+  }
+  if(period==='2024'){
+    const bdre = DATA.dre_bacen['2024'][k];
+    const lucro = bdre ? bdre.z : null;
+    const plRef = DATA.bacen_bs[k].patrimonio_liquido[1]; // pontual — sem PL de 2023 nesta fonte
+    const p = safeDiv(lucro, plRef);
+    return p===null? null : p*100;
+  }
+  const bdre = DATA.dre_bacen['2025'][k];
+  const lucro = bdre ? bdre.z : null;
+  const plMedio = avg(DATA.bacen_bs[k].patrimonio_liquido[0], DATA.bacen_bs[k].patrimonio_liquido[1]);
+  const p = safeDiv(lucro, plMedio);
+  return p===null? null : p*100;
+}
+
+function bankColor(k){ return META[k].color; }
+function bankColorAlpha(k,a){ return META[k].color.replace('rgb(','rgba(').replace(')',','+a+')'); }
+
+// ============ MENU ============
+const PAGES = [
+  {id:'geral', icon:'&#9632;', label:'Visão Geral', source:'shared'},
+  {id:'balanco', icon:'&#9776;', label:'Balanço Patrimonial', source:'df'},
+  {id:'dre', icon:'&#8801;', label:"DRE DF's", source:'df'},
+  {id:'balancobacen', icon:'&#127974;', label:'Balanço (BRGAAP)', source:'bacen'},
+  {id:'drebacen', icon:'&#127974;', label:'DRE (BRGAAP)', source:'bacen'},
+  {id:'comparativobacen', icon:'&#8644;', label:'Comparativo (BRGAAP)', source:'bacen'},
+  {id:'creditobacen', icon:'&#9888;', label:'Qualidade de Crédito (BRGAAP)', source:'bacen'},
+  {id:'kpisbacen', icon:'&#9733;', label:"KPI's Financeiros (BRGAAP)", source:'bacen'},
+  {id:'credito', icon:'&#9888;', label:'Qualidade de Crédito', source:'df'},
+  {id:'kpis', icon:'&#9733;', label:"KPI's Financeiros", source:'df'},
+  {id:'capital', icon:'&#9679;', label:"KPI's de Capital", source:'bacen'},
+  {id:'captacao', icon:'&#8644;', label:'Estrutura de Captação', source:'df'},
+  {id:'ranking', icon:'&#9650;', label:'Alertas e Ranking', source:'shared'},
+  {id:'highlights', icon:'&#9998;', label:'Key Highlights', source:'shared'},
+];
+
+let currentSource = 'df'; // 'df' | 'bacen' — controla quais itens do menu aparecem
+
+const FOOTER_SRC_TEXT = {
+  df: 'Demonstrações Financeiras dos Conglomerados Prudenciais de cada instituição (31/12/2025), Res. CMN nº 4.280/2013.',
+  bacen: 'Bacen — IF.data (Informações de Capital e Demonstração de Resultado), base 2025. Fonte oficial, dados exportados pelo usuário.'
+};
+
+const menu = document.getElementById('menu');
+PAGES.forEach(p=>{
+  const li = document.createElement('li');
+  li.id = 'navli-'+p.id;
+  const btn = document.createElement('button');
+  btn.innerHTML = `<span class="ic">${p.icon}</span><span>${p.label}</span>`;
+  btn.onclick = ()=>showPage(p.id);
+  btn.id = 'nav-'+p.id;
+  li.appendChild(btn);
+  menu.appendChild(li);
+});
+
+const main = document.getElementById('main');
+PAGES.forEach(p=>{
+  const div = document.createElement('div');
+  div.className='page';
+  div.id='page-'+p.id;
+  main.appendChild(div);
+});
+
+function applySourceFilter(){
+  PAGES.forEach(p=>{
+    const li = document.getElementById('navli-'+p.id);
+    const visible = p.source==='shared' || p.source===currentSource;
+    li.classList.toggle('hidden-source', !visible);
+  });
+  document.getElementById('footerSrcText').textContent = FOOTER_SRC_TEXT[currentSource];
+}
+
+document.querySelectorAll('.source-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    currentSource = btn.dataset.source;
+    document.querySelectorAll('.source-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    applySourceFilter();
+    const activePage = PAGES.find(p=> document.getElementById('nav-'+p.id).classList.contains('active'));
+    if(activePage && activePage.source!=='shared' && activePage.source!==currentSource){
+      // página atual não pertence à fonte selecionada -> troca para a 1ª página visível dessa fonte
+      const firstVisible = PAGES.find(p=> p.source==='shared' || p.source===currentSource);
+      showPage(firstVisible.id);
+    } else if(activePage && activePage.source==='shared'){
+      // página compartilhada (ex: Visão Geral) pode ter conteúdo que depende da fonte -> re-renderiza
+      showPage(activePage.id);
+    }
+  };
+});
+applySourceFilter();
+
+let charts = {};
+function destroyCharts(){ Object.values(charts).forEach(c=>c.destroy()); charts={}; }
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  destroyCharts();
+  RENDER[id]();
+}
+
+// ============ HELPERS DE RANKING ============
+function leaderLaggard(vals, higherIsBetter=true){
+  // vals: {bank: number|null}
+  const entries = Object.entries(vals).filter(([k,v])=>v!==null && v!==undefined && !isNaN(v));
+  if(entries.length<2) return {leader:null, lag:null};
+  entries.sort((a,b)=> higherIsBetter? b[1]-a[1] : a[1]-b[1]);
+  return {leader:entries[0][0], lag:entries[entries.length-1][0]};
+}
+
+// ============ PÁGINA: VISÃO GERAL ============
+RENDER = {};
+RENDER.geral = function(){
+  const el = document.getElementById('page-geral');
+  const isBacen = currentSource === 'bacen';
+  const subLabel = isBacen ? 'Base Bacen — IF.data (2025, ou média 2025+2024 quando indicado) — valores em R$ milhões' : 'Base 31/12/2025 (ou período mais recente disponível) — valores em R$ milhões';
+  const alertaDF = `<b>Atenção — comparabilidade:</b> Toyota, Volkswagen e GM reportam em IFRS; Stellantis Financiamentos e RCI reportam em BR GAAP/COSIF. A Res. CMN nº 4.966/21, em vigor desde 01/01/2025, vale para todas as instituições reguladas pelo Bacen (Toyota e GM citam a norma no DF); para quem já reporta em IFRS o impacto é pontual (classificação de TVM, custos incrementais), já que a metodologia de perda esperada já seguia o IFRS 9. Para STLA e RCI (BR GAAP/COSIF) a mudança é estrutural: migração do modelo de perdas incorridas (rating C1-C5 / AA-H) para o modelo de Estágios 1/2/3 — balanço, DRE e carteira de 2024/2023 estão disponíveis para os dois (STLA via Relatório Prudencial 2024; RCI via RCI_Dez_24.pdf), mas a qualidade de crédito por estágio não é diretamente comparável entre 2025 e os anos anteriores.`;
+  const alertaBacen = `<b>Atenção — comparabilidade:</b> Todos os valores desta página, no modo Bacen, vêm diretamente do IF.data (ativo, passivo e resultado), em base BRGAAP/COSIF para todas as instituições — inclusive Toyota, Volkswagen e GM, que reportam IFRS em suas próprias DFs. Por isso os números aqui podem divergir dos exibidos no modo DF's (ver página Balanço BRGAAP para a conferência PL Bacen vs. DF). RCI não aparece individualmente no IF.data (resultado e balanço apurados em conjunto com o Conglomerado Santander).`;
+
+  el.innerHTML = `
+    <h1 class="page-title">Visão Geral</h1>
+    <div class="page-sub">${subLabel}</div>
+    <div class="alert-bar">${isBacen ? alertaBacen : alertaDF}</div>
+
+    <div class="grid4">
+      <div class="card"><h3>Carteira de Crédito Média (líquida)</h3><canvas id="ch1"></canvas></div>
+      <div class="card"><h3>Patrimônio Líquido</h3><canvas id="ch2"></canvas></div>
+      <div class="card"><h3>Lucro Líquido</h3><canvas id="ch3"></canvas></div>
+      <div class="card"><h3>ROAE (Lucro / Equity Médio)*</h3><canvas id="ch4"></canvas></div>
+    </div>
+    <div class="page-sub" style="margin-top:-14px;margin-bottom:22px;">* ROAE: Lucro Líquido / Equity Médio (2025+2024)/2. ${isBacen ? 'Base Bacen: PL médio do IF.data; sem o ajuste de equity da STLA (a granularidade do NCI por entidade não está disponível nessa fonte).' : 'Base DFs: para STLA, o Equity usa a versão Ajustada (exclui NCI de terceiros dos FIDCs, mantendo o Banco Stellantis, 100% do Grupo) — ver detalhamento na página Balanço Patrimonial.'}</div>
+
+    <div class="section-title">Composição do Conglomerado Prudencial</div>
+    <div class="comp-grid" id="compGrid"></div>
+  `;
+
+  const labels = ORDER.map(k=>META[k].short);
+  const colors = ORDER.map(k=>bankColor(k));
+
+  if(isBacen){
+    // Carteira média líquida (Bacen)
+    const carteiraMedia = ORDER.map(k=> DATA.bacen_bs[k] ? anrForBacen(k) : null);
+    makeBar('ch1', labels, carteiraMedia.map(v=>v?v/1000:null), colors, 'R$ mi');
+
+    // PL atual (Bacen, 2025)
+    const pl = ORDER.map(k=> DATA.bacen_bs[k] ? DATA.bacen_bs[k].patrimonio_liquido[0] : null);
+    makeBar('ch2', labels, pl.map(v=>v?v/1000:null), colors, 'R$ mi');
+
+    // Lucro líquido (Bacen, 2025)
+    const ll = ORDER.map(k=>{
+      const bdre = DATA.dre_bacen['2025'][k];
+      return bdre ? bdre.z : null;
+    });
+    makeBar('ch3', labels, ll.map(v=>v?v/1000:null), colors, 'R$ mi');
+
+    // ROAE (Bacen)
+    const roae = ORDER.map(k=> DATA.bacen_bs[k] ? roaeForBacen(k) : null);
+    makeBar('ch4', labels, roae, colors, '%', true);
+  } else {
+    // Carteira média líquida (DF)
+    const carteiraMedia = ORDER.map(k=>{
+      const c = DATA.carteira[k];
+      return avg(c.liquida[0], c.liquida[1]);
+    });
+    makeBar('ch1', labels, carteiraMedia.map(v=>v?v/1000:null), colors, 'R$ mi');
+
+    // PL atual (DF)
+    const pl = ORDER.map(k=>DATA.bs[k].pl[0]);
+    makeBar('ch2', labels, pl.map(v=>v/1000), colors, 'R$ mi');
+
+    // Lucro líquido atual (DF)
+    const ll = ORDER.map(k=>DATA.dre[k].lucro_liquido[0]);
+    makeBar('ch3', labels, ll.map(v=>v/1000), colors, 'R$ mi');
+
+    // ROAE (DF) — STLA usa equity ajustado, excluindo efeito FIDC — ver nota na página Balanço Patrimonial
+    const roae = ORDER.map(k=> roeFor(k) );
+    makeBar('ch4', labels, roae, colors, '%', true);
+  }
+
+  // composição
+  const grid = document.getElementById('compGrid');
+  ORDER.forEach(k=>{
+    const m = META[k];
+    const padrao = isBacen ? (k==='rci' ? 'N/A — RCI não aparece individualmente no IF.data' : 'BRGAAP/COSIF (Bacen — IF.data)') : m.standard;
+    const periodo = isBacen ? (k==='rci' ? '—' : '31/12/2025 e 31/12/2024 (Bacen — IF.data)') : m.period;
+    grid.innerHTML += `
+    <div class="comp-card" style="border-top:4px solid ${m.color}">
+      <div class="head"><div class="dot" style="background:${m.color}"></div><div class="name">${m.name}</div></div>
+      <dl>
+        <dt>Padrão contábil</dt><dd>${padrao}</dd>
+        <dt>Período-base</dt><dd>${periodo}</dd>
+        <dt>Controlador</dt><dd>${m.controlador}</dd>
+        <dt>Entidades do conglomerado</dt><dd>${m.entidades}</dd>
+        <dt>Marcas</dt><dd>${m.marcas}</dd>
+      </dl>
+    </div>`;
+  });
+};
+
+if(window.ChartDataLabels) Chart.register(ChartDataLabels);
+
+function fmtLabelValue(v){ // v já em R$ milhões -> formata em mi ou bi
+  if(v===null||v===undefined||isNaN(v)) return 'N/D';
+  const abs = Math.abs(v);
+  if(abs>=1000){
+    return (v/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' bi';
+  }
+  return v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' mi';
+}
+
+function makeBar(id, labels, values, colors, unit, isPct=false){
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx,{
+    type:'bar',
+    data:{labels, datasets:[{data:values, backgroundColor:colors, borderRadius:5, maxBarThickness:46}]},
+    options:{
+      layout:{padding:{top:22}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:(c)=> (c.raw==null?'N/D': (isPct? c.raw.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : fmtLabelValue(c.raw)))}},
+        datalabels:{
+          anchor:'end', align:'top', offset:2,
+          color:'#1c2333', font:{size:11, weight:'700'},
+          formatter:(v)=> v===null||v===undefined? 'N/D' : (isPct? v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : fmtLabelValue(v))
+        }
+      },
+      scales:{
+        y:{ display:false, grid:{display:false} },
+        x:{grid:{display:false}, ticks:{font:{size:11.5}}}
+      },
+      responsive:true, maintainAspectRatio:false
+    }
+  });
+  document.getElementById(id).parentElement.style.height='230px';
+}
+
+// ============ PÁGINA: BALANÇO PATRIMONIAL ============
+RENDER.balanco = function(){
+  const el = document.getElementById('page-balanco');
+  el.innerHTML = `
+    <h1 class="page-title">Balanço Patrimonial</h1>
+    <div class="page-sub">Valores em R$ milhões</div>
+    <div class="filters">
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Período:</label>
+      <select id="balYearSel">
+        <option value="0">Ano corrente (2025)</option>
+        <option value="1">Ano anterior (2024)</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table id="balTable"></table></div>
+
+    <div class="section-title">Breakdown do Patrimônio Líquido — Controladores vs. Participação de Não Controladores (NCI)</div>
+    <div class="alert-bar"><b>Atenção — STLA:</b> o PL consolidado da Stellantis Financiamentos inclui participação de não controladores (NCI) de <b>73% do PL total em 2025</b> (72,7% em 2024). Esse NCI tem <b>duas naturezas distintas</b> (ver tabela abaixo): o <b>Banco Stellantis</b> — 100% do Grupo Stellantis, sem participação societária direta da Stellantis Financiamentos, mas que não é capital de terceiros externos ao Grupo — e os <b>FIDCs</b> (Vita Auto, MOAB, Mobility I e II), cujas cotas de terceiros (ex.: geridas pela Bradesco Asset Management) representam capital efetivamente externo ao Grupo Stellantis.</div>
+    <div class="table-wrap"><table id="plBreakdownTable"></table></div>
+
+    <div class="section-title">Detalhamento do NCI da STLA — Banco Stellantis vs. FIDCs (2025 e 2024)</div>
+    <div class="page-sub" style="margin-bottom:12px;">Fonte: Escopo de Consolidação do DF 2025 e Nota 14.e — Participações Não Controladoras (Relatório Prudencial 2024, pág. 32). Em 2024, apenas o FIDC Vita Auto existia (MOAB, Mobility I e II ainda não haviam sido constituídos).</div>
+    <div class="table-wrap"><table id="stlaNciTable"></table></div>
+    <div class="page-sub" style="margin-top:10px;">"Equity Ajustado" = PL Atribuível aos Controladores + NCI do Banco Stellantis (exclui apenas o NCI de terceiros dos FIDCs) = R$ ${fmtM(DATA.pl_breakdown.stla.atribuivel_controladores[0]+DATA.pl_breakdown.stla.nci_banco_stellantis[0])} milhões em 2025 e R$ ${fmtM(DATA.pl_breakdown.stla.atribuivel_controladores[1]+DATA.pl_breakdown.stla.nci_banco_stellantis[1])} milhões em 2024 — Equity Médio (2025+2024)/2 = R$ ${fmtM(stlaAdjustedEquity())} milhões. <b>Esta é a base de capital já utilizada no cálculo de ROAE da STLA em todo o dashboard (modo DF's)</b> (Visão Geral, KPI's Financeiros e Alertas e Ranking), substituindo o PL total consolidado, que embute o NCI de terceiros dos FIDCs.</div>
+
+    <div class="section-title">Por que o efeito de NCI só aparece na STLA? — Tratamento Contábil dos FIDCs por Banco</div>
+    <div class="page-sub" style="margin-bottom:12px;">A maioria dos bancos captive possui FIDC, mas o impacto no Patrimônio Líquido consolidado depende de como as cotas de terceiros são classificadas: como <b>patrimônio</b> (gera NCI, caso da STLA) ou como <b>passivo financeiro</b> (dívida, sem efeito no PL, caso de GM e Volkswagen).</div>
+    <div class="table-wrap"><table id="fidcCompTable"></table></div>
+
+    <div class="section-title">Cálculo da Carteira Média (ANR — Average Net Receivables)</div>
+    <div class="page-sub" style="margin-bottom:12px;">ANR = (Carteira líquida do período atual + Carteira líquida do período anterior) / 2. Quando não há período anterior disponível, utiliza-se o saldo pontual.</div>
+    <div class="table-wrap"><table id="anrTable"></table></div>
+  `;
+  document.getElementById('balYearSel').onchange = renderBalTable;
+  renderBalTable();
+  renderPlBreakdownTable();
+  renderStlaNciTable();
+  renderFidcCompTable();
+  renderAnrTable();
+};
+
+function renderFidcCompTable(){
+  const table = document.getElementById('fidcCompTable');
+  table.style.tableLayout = 'fixed';
+  table.style.width = '100%';
+  table.style.minWidth = '100%';
+  let colgroup = `<colgroup>
+    <col style="width:8%">
+    <col style="width:8%">
+    <col style="width:16%">
+    <col style="width:10%">
+    <col style="width:58%">
+  </colgroup>`;
+  const thStyle = 'white-space:normal;word-break:break-word;box-sizing:border-box;';
+  const tdStyle = 'white-space:normal;word-break:break-word;box-sizing:border-box;vertical-align:top;padding-top:10px;';
+  let thead = `<thead><tr><th style="${thStyle}width:8%;">Banco</th><th style="${thStyle}width:8%;">Possui FIDC?</th><th style="${thStyle}width:16%;">Classificação das Cotas de Terceiros</th><th style="${thStyle}width:10%;">Efeito no PL Consolidado</th><th style="${thStyle}width:58%;">Detalhamento</th></tr></thead>`;
+  let tbody = `<tbody>`;
+  DATA.fidc_comparativo.forEach(f=>{
+    const m = META[f.banco];
+    tbody += `<tr><td style="${tdStyle}width:8%;"><b style="color:${m.color}">${m.short}</b></td><td style="${tdStyle}width:8%;">${f.tem_fidc? 'Sim':'Não'}</td><td style="${tdStyle}width:16%;font-size:13.5px;">${f.classificacao}</td><td style="${tdStyle}width:10%;">${f.efeito_pl? fmtMcell(f.efeito_pl)+' (NCI)' : (f.tem_fidc? 'R$ 0 (sem efeito)' : '—')}</td><td style="${tdStyle}width:58%;font-size:13.5px;text-align:left;">${f.tratamento}</td></tr>`;
+  });
+  tbody += `</tbody>`;
+  table.innerHTML = colgroup+thead+tbody;
+
+  // Igualar a altura de todas as linhas pela linha mais alta (ex.: STLA, com texto mais longo)
+  requestAnimationFrame(()=>{
+    const rows = table.querySelectorAll('tbody tr');
+    let maxH = 0;
+    rows.forEach(r=>{ r.querySelectorAll('td').forEach(td=>{ td.style.height='auto'; }); });
+    rows.forEach(r=>{ maxH = Math.max(maxH, r.getBoundingClientRect().height); });
+    rows.forEach(r=>{
+      r.querySelectorAll('td').forEach(td=>{ td.style.height = maxH+'px'; });
+    });
+  });
+}
+
+function renderStlaNciTable(){
+  const p = DATA.pl_breakdown.stla;
+  const table = document.getElementById('stlaNciTable');
+  table.innerHTML = `
+    <thead><tr><th>Componente</th><th>2025 (R$ mi)</th><th>2024 (R$ mi)</th><th>% do NCI Total (2025)</th><th>Natureza</th></tr></thead>
+    <tbody>
+      <tr><td>Banco Stellantis</td><td>${fmtMcell(p.nci_banco_stellantis[0])}</td><td>${fmtMcell(p.nci_banco_stellantis[1])}</td><td>${(p.nci_banco_stellantis[0]/p.nci[0]*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}%</td><td style="white-space:normal;">Capital do Grupo Stellantis (não é terceiro externo)</td></tr>
+      <tr><td>FIDCs (2025: Vita Auto+MOAB+Mobility I e II; 2024: só Vita Auto)</td><td>${fmtMcell(p.nci_fidcs[0])}</td><td>${fmtMcell(p.nci_fidcs[1])}</td><td>${(p.nci_fidcs[0]/p.nci[0]*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}%</td><td style="white-space:normal;">Capital de terceiros externos (cotistas dos fundos)</td></tr>
+      <tr class="subtotal"><td>Total NCI</td><td>${fmtMcell(p.nci[0])}</td><td>${fmtMcell(p.nci[1])}</td><td>100,0%</td><td>—</td></tr>
+    </tbody>
+  `;
+}
+
+function renderBalTable(){
+  const yearIdx = parseInt(document.getElementById('balYearSel').value);
+  const rows = [
+    {label:'Ativo Total', get:k=>DATA.bs[k].ativo[yearIdx], fmt:'m'},
+    {label:'Carteira de Crédito Bruta', get:k=>DATA.carteira[k].bruta[yearIdx], fmt:'m'},
+    {label:'( - ) PDD / ECL', get:k=>DATA.carteira[k].pdd[yearIdx]!==null? -DATA.carteira[k].pdd[yearIdx]:null, fmt:'m'},
+    {label:'Carteira de Crédito Líquida', get:k=>DATA.carteira[k].liquida[yearIdx], fmt:'m'},
+    {label:'Passivo Total', get:k=>DATA.bs[k].passivo[yearIdx], fmt:'m'},
+    {label:'Patrimônio Líquido', get:k=>DATA.bs[k].pl[yearIdx], fmt:'m', better:'high'},
+    {label:'Capital Social', get:k=>DATA.bs[k].capital_social[yearIdx], fmt:'m'},
+  ];
+  renderComparisonTable('balTable', rows);
+}
+
+function renderPlBreakdownTable(){
+  const rows = [
+    {label:'Capital Social', get:k=>DATA.pl_breakdown[k].capital_social[0], fmt:'m'},
+    {label:'Reservas e Outros Resultados', get:k=>DATA.pl_breakdown[k].reservas_outros[0], fmt:'m'},
+    {label:'PL Atribuível aos Controladores', get:k=>DATA.pl_breakdown[k].atribuivel_controladores[0], fmt:'m', better:'high'},
+    {label:'( + ) Participação de Não Controladores (NCI)', get:k=>DATA.pl_breakdown[k].nci[0], fmt:'m'},
+    {label:'= Patrimônio Líquido Total (Consolidado)', get:k=>DATA.bs[k].pl[0], fmt:'m'},
+    {label:'NCI / PL Total (%)', get:k=>safeDiv(DATA.pl_breakdown[k].nci[0], DATA.bs[k].pl[0])*100, fmt:'p', better:'low'},
+  ];
+  renderComparisonTable('plBreakdownTable', rows);
+}
+
+function renderAnrTable(){
+  const rows = [
+    {label:'Carteira Líquida — Ano Corrente (2025)', get:k=>DATA.carteira[k].liquida[0], fmt:'m'},
+    {label:'Carteira Líquida — Ano Anterior (2024)', get:k=>DATA.carteira[k].liquida[1], fmt:'m'},
+    {label:'ANR — Carteira Média', get:k=>avg(DATA.carteira[k].liquida[0],DATA.carteira[k].liquida[1]), fmt:'m', better:'high'},
+  ];
+  renderComparisonTable('anrTable', rows);
+}
+
+
+RENDER.dre = function(){
+  const el = document.getElementById('page-dre');
+  el.innerHTML = `
+    <h1 class="page-title">DRE DF's</h1>
+    <div class="page-sub">Valores em R$ milhões. Linha "%ANR" = percentual sobre a Carteira de Crédito Média (Average Net Receivables), anualizado.</div>
+    <div class="filters">
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Período:</label>
+      <select id="dreYearSel">
+        <option value="0">Ano corrente (2025)</option>
+        <option value="1">Ano anterior (2024)</option>
+      </select>
+    </div>
+    <div class="alert-bar"><b>Nota metodológica:</b> GM não segrega tarifas bancárias como receita própria. Volkswagen apresenta "Despesas Gerais e Administrativas" de forma combinada (pessoal + outras despesas administrativas), sem segregação de despesas de pessoal.</div>
+    <div class="table-wrap"><table id="dreTable"></table></div>
+  `;
+  document.getElementById('dreYearSel').onchange = renderDreTable;
+  renderDreTable();
+};
+
+const DRE_ROWS = [
+  {key:'receita_juros', label:'Receita de Juros e Similares'},
+  {key:'despesa_juros', label:'Despesa de Juros e Similares'},
+  {key:'resultado_liquido_juros', label:'Resultado Líquido de Juros', subtotal:true},
+  {key:'pdd_dre', label:'Provisão para Perdas Esperadas (ECL/PDD)'},
+  {key:'resultado_apos_pdd', label:'Resultado após Provisão', subtotal:true},
+  {key:'tarifas_servicos', label:'Receitas de Tarifas e Serviços'},
+  {key:'ganhos_perdas_ativos_passivos', label:'Ganhos (Perdas) com Ativos e Passivos Financeiros'},
+  {key:'despesas_pessoal', label:'Despesas de Pessoal'},
+  {key:'despesas_adm', label:'Outras Despesas Administrativas'},
+  {key:'despesas_tributarias', label:'Despesas Tributárias'},
+  {key:'outras_receitas_op', label:'Outras Receitas Operacionais'},
+  {key:'outras_despesas_op', label:'Outras Despesas Operacionais'},
+  {key:'resultado_operacional', label:'Resultado Operacional', subtotal:true},
+  {key:'resultado_nao_operacional', label:'Resultado Não Operacional'},
+  {key:'resultado_antes_impostos', label:'Resultado Antes dos Impostos', subtotal:true},
+  {key:'impostos', label:'Imposto de Renda e Contribuição Social'},
+  {key:'lucro_liquido', label:'LUCRO LÍQUIDO DO EXERCÍCIO', subtotal:true},
+];
+
+function anrFor(k, yearIdx){
+  const c = DATA.carteira[k];
+  if(yearIdx===0){
+    const m = avg(c.liquida[0], c.liquida[1]);
+    return {value:m, isAvg: c.liquida[1]!==null};
+  } else {
+    return {value:c.liquida[1], isAvg:false};
+  }
+}
+
+// ANR baseado no IF.data (Bacen) — usado nas páginas de fonte 'bacen' (Balanço Bacen, DRE Bacen, etc.).
+// Carteira Líquida (Operações de Crédito) do Bacen. Índices: [0]=2025, [1]=2024, [2]=2026-T1, [3]=2025-T1, [4]=2026-1S.
+// period '2025' (padrão) = média (2025+2024)/2; '2024' = saldo pontual 2024;
+// '2026-T1' = média entre 2025 e o saldo do próprio trimestre; '2025-T1' = média entre 2024 e o saldo do próprio trimestre.
+// '2026-1S' = média entre 2025 e o saldo do próprio semestre.
+function anrForBacen(k, period){
+  const c = DATA.bacen_bs[k].carteira_liquida;
+  if(period==='2026-1S') return avg(c[0], c[4]);
+  if(period==='2026-T1') return avg(c[0], c[2]);
+  if(period==='2025-T1') return avg(c[1], c[3]);
+  if(period==='2024') return c[1];
+  return avg(c[0], c[1]);
+}
+
+function renderDreTable(){
+  const yearIdx = parseInt(document.getElementById('dreYearSel').value);
+  const table = document.getElementById('dreTable');
+  table.style.tableLayout = 'fixed';
+  let colgroup = `<colgroup><col style="width:22%">`;
+  ORDER.forEach(()=> colgroup += `<col style="width:7.8%"><col style="width:7.8%">`);
+  colgroup += `</colgroup>`;
+
+  let thead = `<thead><tr><th rowspan="2" style="text-align:left;">R$ milhões</th>`;
+  ORDER.forEach(k=> thead += `<th colspan="2">${META[k].short}</th>`);
+  thead += `</tr><tr>`;
+  ORDER.forEach(()=> thead += `<th style="font-size:10.5px;">R$ mi</th><th style="font-size:10.5px;">%ANR</th>`);
+  thead += `</tr></thead>`;
+
+  let tbody = `<tbody>`;
+  // Linha de ANR (montante) — indicativo patrimonial, exibido como referência no topo da DRE
+  tbody += `<tr class="subtotal"><td style="text-align:left;">ANR — Carteira Média (Average Net Receivables)</td>`;
+  ORDER.forEach(k=>{
+    const anr = anrFor(k, yearIdx);
+    tbody += `<td>${fmtMcell(anr.value)}</td><td style="font-size:11.5px;"><span class="nd">—</span></td>`;
+  });
+  tbody += `</tr>`;
+  DRE_ROWS.forEach(row=>{
+    tbody += `<tr class="${row.subtotal?'subtotal':''}"><td style="text-align:left;">${row.label}</td>`;
+    ORDER.forEach(k=>{
+      const v = DATA.dre[k][row.key] ? DATA.dre[k][row.key][yearIdx] : null;
+      const anr = anrFor(k, yearIdx);
+      let pct = safeDiv(v, anr.value);
+      let cell = 'N/D'; let cls='';
+      if(pct!==null){
+        pct = pct*100;
+        cls = pct<0?'neg':'pos';
+        cell = pct.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+      }
+      tbody += `<td>${fmtMcell(v)}</td><td class="${cls}" style="font-size:11.5px;">${cell}</td>`;
+    });
+    tbody += `</tr>`;
+  });
+  tbody += `</tbody>`;
+  table.innerHTML = colgroup+thead+tbody;
+}
+
+// ============ PÁGINA: DRE BACEN (BRGAAP) ============
+const DRE_BACEN_BREAKDOWN_ROWS = [
+  {key:'a', label:'Rendas de Aplicações Interfinanceiras de Liquidez'},
+  {key:'b', label:'Rendas de Títulos e Valores Mobiliários (TVM)'},
+  {key:'c', label:'Rendas de Operações de Crédito'},
+  {key:'d', label:'Rendas de Arrendamento Financeiro'},
+  {key:'e', label:'Rendas de Outras Operações c/ Característica de Concessão de Crédito'},
+  {key:'f', label:'Resultado com Perda Esperada (ECL)'},
+  {key:'g', label:'Despesas de Captações'},
+  {key:'h', label:'Despesas de Instrumentos de Dívida Elegíveis a Capital'},
+  {key:'i', label:'Resultado com Derivativos'},
+  {key:'j', label:'Outros Resultados de Intermediação Financeira'},
+  {key:'k', label:'= Resultado de Intermediação Financeira', subtotal:true},
+];
+const DRE_BACEN_ROWS = [
+  {key:'k', label:'Resultado de Intermediação Financeira', subtotal:true},
+  {key:'l', label:'Resultado com Transações de Pagamento'},
+  {key:'m', label:'Rendas de Tarifas Bancárias'},
+  {key:'n', label:'Outras Rendas de Prestação de Serviços'},
+  {key:'o', label:'Despesas de Pessoal'},
+  {key:'p', label:'Despesas Administrativas'},
+  {key:'q', label:'Resultado com Perdas Esperadas de Outras Operações'},
+  {key:'r', label:'Despesas Tributárias'},
+  {key:'s', label:'Resultado de Participações'},
+  {key:'t', label:'Outras Receitas'},
+  {key:'u', label:'Outras Despesas'},
+  {key:'v', label:'Outras Receitas / Despesas', subtotal:true},
+  {key:'w', label:'Resultado Antes da Tributação e Participações', subtotal:true},
+  {key:'x', label:'Imposto de Renda e Contribuição Social'},
+  {key:'y', label:'Participações no Lucro'},
+  {key:'z', label:'LUCRO LÍQUIDO', subtotal:true},
+];
+
+// ============ PÁGINA: BALANÇO (BACEN/BRGAAP) ============
+RENDER.balancobacen = function(){
+  const el = document.getElementById('page-balancobacen');
+  el.innerHTML = `
+    <h1 class="page-title">Balanço (BRGAAP)</h1>
+    <div class="page-sub">Fonte: Bacen — IF.data, arquivos IF.data_ativo/passivo 2025, 2024, 1º trimestre 2026, 1º trimestre 2025 e 1º semestre 2026. Valores em R$ milhões.</div>
+    <div class="filters">
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Período:</label>
+      <select id="balancoBacenYearSel">
+        <option value="4">1º semestre 2026</option>
+        <option value="2">1º trimestre 2026</option>
+        <option value="0">2025</option>
+        <option value="3">1º trimestre 2025</option>
+        <option value="1">2024</option>
+      </select>
+    </div>
+    <div class="alert-bar"><b>Atenção:</b> ${DATA.bacen_bs_nota} RCI não aparece individualmente no IF.data (mesma situação já sinalizada na DRE Bacen e no Índice de Basileia).</div>
+    <div class="table-wrap"><table id="balancoBacenTable"></table></div>
+
+    <div class="section-title">Carteira Média (ANR) — Base Bacen (IF.data)</div>
+    <div class="page-sub" style="margin-bottom:12px;">Usada no cálculo de %ANR de todas as páginas da seção Bacen (esta e a DRE). Fonte distinta da carteira das DFs — por isso o %ANR pode divergir entre as seções DF's e Bacen, mesmo com a mesma fórmula. ANR do 1T2026 = média entre o saldo de 2025 e o saldo do próprio trimestre; ANR do 1T2025 = média entre o saldo de 2024 e o saldo do próprio trimestre; ANR do 1S2026 = média entre o saldo de 2025 e o saldo do próprio semestre.</div>
+    <div class="table-wrap"><table id="anrBacenTable"></table></div>
+
+    <div class="section-title">Conferência: Patrimônio Líquido — Bacen vs. DF</div>
+    <div class="page-sub" style="margin-bottom:12px;">STLA reporta em BRGAAP/COSIF na própria DF — por isso bate exatamente com o Bacen. Toyota, Volkswagen e GM reportam em IFRS na própria DF — divergências frente ao Bacen (BRGAAP/COSIF) são esperadas por diferença de padrão contábil, não erro de dado.</div>
+    <div class="table-wrap"><table id="plReconTable"></table></div>
+  `;
+  document.getElementById('balancoBacenYearSel').onchange = renderBalancoBacenTable;
+  renderBalancoBacenTable();
+  renderAnrBacenTable();
+  renderPlReconTable();
+};
+
+function renderBalancoBacenTable(){
+  const yearIdx = parseInt(document.getElementById('balancoBacenYearSel').value);
+  const rows = [
+    {label:'Ativo Total', get:k=>DATA.bacen_bs[k].ativo_total[yearIdx], fmt:'m'},
+    {label:'Carteira de Crédito Bruta', get:k=>DATA.bacen_bs[k].carteira_bruta[yearIdx], fmt:'m'},
+    {label:'( - ) Perda Esperada / PDD', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[yearIdx], l=DATA.bacen_bs[k].carteira_liquida[yearIdx];
+        return (b===null||l===null)? null : (l-b);
+      }, fmt:'m'},
+    {label:'Carteira de Crédito Líquida', get:k=>DATA.bacen_bs[k].carteira_liquida[yearIdx], fmt:'m'},
+    {label:'Passivo Total', get:k=>DATA.bacen_bs[k].passivo_total[yearIdx], fmt:'m'},
+    {label:'Patrimônio Líquido', get:k=>DATA.bacen_bs[k].patrimonio_liquido[yearIdx], fmt:'m', better:'high'},
+    {label:'Captações Totais', get:k=>DATA.bacen_bs[k].captacoes[yearIdx], fmt:'m'},
+    {label:'Depósitos', get:k=>DATA.bacen_bs[k].depositos[yearIdx], fmt:'m'},
+  ];
+  renderComparisonTable('balancoBacenTable', rows);
+}
+
+function renderAnrBacenTable(){
+  const rows = [
+    {label:'Carteira Líquida — 2025 (Bacen)', get:k=>DATA.bacen_bs[k].carteira_liquida[0], fmt:'m'},
+    {label:'Carteira Líquida — 2024 (Bacen)', get:k=>DATA.bacen_bs[k].carteira_liquida[1], fmt:'m'},
+    {label:'Carteira Líquida — 1T2026 (Bacen)', get:k=>DATA.bacen_bs[k].carteira_liquida[2], fmt:'m'},
+    {label:'Carteira Líquida — 1T2025 (Bacen)', get:k=>DATA.bacen_bs[k].carteira_liquida[3], fmt:'m'},
+    {label:'Carteira Líquida — 1S2026 (Bacen)', get:k=>DATA.bacen_bs[k].carteira_liquida[4], fmt:'m'},
+    {label:'ANR — Carteira Média 2025 (2025+2024)/2', get:k=>anrForBacen(k,'2025'), fmt:'m', better:'high'},
+    {label:'ANR — Carteira Média 1T2026 (2025+1T2026)/2', get:k=>anrForBacen(k,'2026-T1'), fmt:'m', better:'high'},
+    {label:'ANR — Carteira Média 1T2025 (2024+1T2025)/2', get:k=>anrForBacen(k,'2025-T1'), fmt:'m', better:'high'},
+    {label:'ANR — Carteira Média 1S2026 (2025+1S2026)/2', get:k=>anrForBacen(k,'2026-1S'), fmt:'m', better:'high'},
+  ];
+  renderComparisonTable('anrBacenTable', rows);
+}
+
+function renderPlReconTable(){
+  const rows = [
+    {label:'PL — Bacen (2025)', get:k=>DATA.bacen_bs[k].patrimonio_liquido[0], fmt:'m'},
+    {label:'PL — DF (2025)', get:k=>DATA.bs[k].pl[0], fmt:'m'},
+    {label:'Diferença (Bacen - DF)', get:k=>{
+        const b=DATA.bacen_bs[k].patrimonio_liquido[0], d=DATA.bs[k].pl[0];
+        return (b===null||d===null)? null : (b-d);
+      }, fmt:'m'},
+  ];
+  renderComparisonTable('plReconTable', rows);
+}
+
+RENDER.drebacen = function(){
+  const el = document.getElementById('page-drebacen');
+  const years = DATA.dre_bacen_years;
+  const labels = {'2026-1S':'1º semestre 2026', '2025':'2025 (ano completo)', '2024':'2024 (ano completo)', '2026-T1':'1º trimestre 2026', '2025-T1':'1º trimestre 2025'};
+  el.innerHTML = `
+    <h1 class="page-title">DRE Bacen (BRGAAP)</h1>
+    <div class="page-sub">Fonte: Bacen — IF.data. Base COSIF/BRGAAP. Valores em R$ milhões.</div>
+    <div class="filters">
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Período:</label>
+      <select id="dreBacenYearSel">
+        ${years.map(y=>`<option value="${y}">${labels[y]||y}</option>`).join('')}
+      </select>
+    </div>
+    <div class="alert-bar"><b>Atenção:</b> Os valores refletem o padrão contábil BRGAAP/COSIF reportado ao Bacen (diferente do IFRS usado por Toyota/Volkswagen/GM em seus próprios DFs) — pequenas diferenças frente à aba "DRE DF's" são esperadas por diferença de padrão contábil, mesmo já em base anual. RCI não aparece individualmente no IF.data (resultado apurado em conjunto com o Conglomerado Santander — mesma situação do Índice de Basileia).</div>
+    <div class="alert-bar"><b>2024 (ano completo):</b> ${DATA.dre_bacen_2024_nota}</div>
+    <div class="table-wrap"><table id="dreBacenTable"></table></div>
+
+    <div class="section-title">Abertura do Resultado de Intermediação Financeira</div>
+    <div class="page-sub" style="margin-bottom:12px;">Detalhamento das rendas e despesas (a) a (j) que compõem o totalizador "Resultado de Intermediação Financeira" (k), exibido no topo da tabela acima.</div>
+    <div class="table-wrap"><table id="dreBacenBreakdownTable"></table></div>
+
+    <div class="alert-bar" style="margin-top:22px;"><b>1º trimestre 2026, 1º trimestre 2025 e 1º semestre 2026:</b> os valores em R$ milhões são o fluxo puro do período (não anualizados). Já a coluna "%ANR (a.a.)" anualiza esse fluxo antes de dividir pela carteira média, para manter a rentabilidade comparável em base anual — trimestre ×4 (÷3×12), semestre ×2 (÷6×12) — metodologia padrão do dashboard para dados sub-anuais.</div>
+  `;
+  document.getElementById('dreBacenYearSel').onchange = ()=>{ renderDreBacenTable(); renderDreBacenBreakdownTable(); };
+  renderDreBacenTable();
+  renderDreBacenBreakdownTable();
+};
+
+function renderDreBacenTable(){
+  const year = document.getElementById('dreBacenYearSel').value;
+  const bacenData = DATA.dre_bacen[year];
+  renderDreBacenGenericTable('dreBacenTable', DRE_BACEN_ROWS, bacenData, year, true);
+}
+
+function renderDreBacenBreakdownTable(){
+  const year = document.getElementById('dreBacenYearSel').value;
+  const bacenData = DATA.dre_bacen[year];
+  renderDreBacenGenericTable('dreBacenBreakdownTable', DRE_BACEN_BREAKDOWN_ROWS, bacenData, year, false);
+}
+
+function renderDreBacenGenericTable(tableId, rowsArray, bacenData, period, showAnrRow){
+  const table = document.getElementById(tableId);
+  table.style.tableLayout = 'fixed';
+  const ORDER_BACEN = ORDER.filter(k=> k!=='rci'); // RCI não aplicável ao IF.data (ver nota acima)
+  const isQuarter = period==='2026-T1' || period==='2025-T1' || period==='2026-1S';
+  let colgroup = `<colgroup><col style="width:26%">`;
+  ORDER_BACEN.forEach(()=> colgroup += `<col style="width:9.25%"><col style="width:9.25%">`);
+  colgroup += `</colgroup>`;
+
+  let thead = `<thead><tr><th rowspan="2" style="text-align:left;">R$ milhões</th>`;
+  ORDER_BACEN.forEach(k=> thead += `<th colspan="2">${META[k].short}</th>`);
+  thead += `</tr><tr>`;
+  ORDER_BACEN.forEach(()=> thead += `<th style="font-size:10.5px;">R$ mi</th><th style="font-size:10.5px;">%ANR${isQuarter?' (a.a.)':''}</th>`);
+  thead += `</tr></thead>`;
+
+  let tbody = `<tbody>`;
+  if(showAnrRow){
+    tbody += `<tr class="subtotal"><td style="text-align:left;">ANR — Carteira Média (Average Net Receivables)</td>`;
+    ORDER_BACEN.forEach(k=>{
+      const anr = anrForBacen(k, period);
+      tbody += `<td>${fmtMcell(anr)}</td><td style="font-size:11.5px;"><span class="nd">—</span></td>`;
+    });
+    tbody += `</tr>`;
+  }
+  rowsArray.forEach(row=>{
+    tbody += `<tr class="${row.subtotal?'subtotal':''}"><td style="text-align:left;">${row.label}</td>`;
+    ORDER_BACEN.forEach(k=>{
+      const v = bacenData[k] ? bacenData[k][row.key] : null;
+      const anr = anrForBacen(k, period);
+      const vAnualizado = (isQuarter && v!==null) ? v*bacenAnnualFactor(period) : v; // anualiza só para o %ANR, nunca o valor absoluto
+      let pct = safeDiv(vAnualizado, anr);
+      let cell = 'N/D'; let cls='';
+      if(pct!==null){
+        pct = pct*100;
+        cls = pct<0?'neg':'pos';
+        cell = pct.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+      }
+      tbody += `<td>${fmtMcell(v)}</td><td class="${cls}" style="font-size:11.5px;">${cell}</td>`;
+    });
+    tbody += `</tr>`;
+  });
+  tbody += `</tbody>`;
+  table.innerHTML = colgroup+thead+tbody;
+}
+
+// ============ PÁGINA: COMPARATIVO (BACEN/BRGAAP) ============
+RENDER.comparativobacen = function(){
+  const el = document.getElementById('page-comparativobacen');
+  const years = DATA.dre_bacen_years;
+  const yearLabels = {'2026-1S':'1º semestre 2026', '2025':'2025 (ano completo)', '2024':'2024 (ano completo)', '2026-T1':'1º trimestre 2026', '2025-T1':'1º trimestre 2025'};
+  const ORDER_BACEN = ORDER.filter(k=> k!=='rci');
+  el.innerHTML = `
+    <h1 class="page-title">Comparativo (BRGAAP)</h1>
+    <div class="page-sub">Fonte: Bacen — IF.data. Selecione a entidade e dois períodos para comparar valores, %ANR e delta entre eles.</div>
+    <div class="filters">
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Entidade:</label>
+      <select id="compBacenEntidade">
+        ${ORDER_BACEN.map((k,i)=>`<option value="${k}" ${i===0?'selected':''}>${META[k].name}</option>`).join('')}
+      </select>
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Período A:</label>
+      <select id="compBacenPeriodA">
+        ${years.map((y,i)=>`<option value="${y}" ${i===0?'selected':''}>${yearLabels[y]||y}</option>`).join('')}
+      </select>
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Período B:</label>
+      <select id="compBacenPeriodB">
+        ${years.map((y,i)=>`<option value="${y}" ${i===2?'selected':''}>${yearLabels[y]||y}</option>`).join('')}
+      </select>
+    </div>
+    <div class="table-wrap"><table id="compBacenTable"></table></div>
+
+    <div class="section-title">Abertura do Resultado de Intermediação Financeira</div>
+    <div class="table-wrap"><table id="compBacenBreakdownTable"></table></div>
+  `;
+  ['compBacenEntidade','compBacenPeriodA','compBacenPeriodB'].forEach(id=>{
+    document.getElementById(id).onchange = ()=>{ renderCompBacenTable(); renderCompBacenBreakdownTable(); };
+  });
+  renderCompBacenTable();
+  renderCompBacenBreakdownTable();
+};
+
+function renderCompBacenGenericTable(tableId, rowsArray){
+  const k = document.getElementById('compBacenEntidade').value;
+  const periodA = document.getElementById('compBacenPeriodA').value;
+  const periodB = document.getElementById('compBacenPeriodB').value;
+  const isQuarterA = periodA==='2026-T1' || periodA==='2025-T1' || periodA==='2026-1S';
+  const isQuarterB = periodB==='2026-T1' || periodB==='2025-T1' || periodB==='2026-1S';
+  const dataA = DATA.dre_bacen[periodA][k];
+  const dataB = DATA.dre_bacen[periodB][k];
+  const anrA = anrForBacen(k, periodA);
+  const anrB = anrForBacen(k, periodB);
+
+  const table = document.getElementById(tableId);
+  table.style.tableLayout = 'fixed';
+  const colgroup = `<colgroup>
+    <col style="width:28%"><col style="width:12%"><col style="width:12%">
+    <col style="width:12%"><col style="width:12%"><col style="width:12%"><col style="width:12%">
+  </colgroup>`;
+
+  const thead = `<thead><tr>
+    <th rowspan="2" style="text-align:left;">R$ milhões</th>
+    <th colspan="2">Período A</th><th colspan="2">Período B</th><th colspan="2" class="highlight-col">Δ (A - B)</th>
+  </tr><tr>
+    <th style="font-size:10.5px;">R$ mi</th><th style="font-size:10.5px;">%ANR</th>
+    <th style="font-size:10.5px;">R$ mi</th><th style="font-size:10.5px;">%ANR</th>
+    <th style="font-size:10.5px;" class="highlight-col">R$ mi</th><th style="font-size:10.5px;" class="highlight-col">p.p.</th>
+  </tr></thead>`;
+
+  const fmt1 = (v)=> v===null||v===undefined? '<span class="nd">N/D</span>' : v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  // delta: verde quando positivo, vermelho quando negativo (diferente do fmtMcell padrão, que só colore negativo)
+  const fmtDeltaM = (v)=> {
+    if(v===null||v===undefined) return '<span class="nd">N/D</span>';
+    const m = v/1000;
+    const cls = m<0? 'valneg' : (m>0? 'valpos':'');
+    const sign = m>0? '+':'';
+    return `<span class="${cls}">${sign}${m.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}</span>`;
+  };
+  const fmtD = (v)=> {
+    if(v===null||v===undefined) return '<span class="nd">N/D</span>';
+    const cls = v<0? 'valneg' : (v>0? 'valpos':'');
+    return `<span class="${cls}">${(v>=0?'+':'')}${v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}p.p.</span>`;
+  };
+
+  let tbody = `<tbody>`;
+  rowsArray.forEach(row=>{
+    const vA = dataA ? dataA[row.key] : null;
+    const vB = dataB ? dataB[row.key] : null;
+    const delta = (vA!==null && vA!==undefined && vB!==null && vB!==undefined) ? (vA-vB) : null;
+
+    const vAanual = (isQuarterA && vA!==null && vA!==undefined) ? vA*bacenAnnualFactor(periodA) : vA;
+    const vBanual = (isQuarterB && vB!==null && vB!==undefined) ? vB*bacenAnnualFactor(periodB) : vB;
+    let pctA = safeDiv(vAanual, anrA); pctA = pctA===null? null : pctA*100;
+    let pctB = safeDiv(vBanual, anrB); pctB = pctB===null? null : pctB*100;
+    const deltaPct = (pctA!==null && pctB!==null) ? (pctA-pctB) : null;
+
+    tbody += `<tr class="${row.subtotal?'subtotal':''}">
+      <td style="text-align:left;">${row.label}</td>
+      <td>${fmtMcell(vA)}</td><td>${fmt1(pctA)}</td>
+      <td>${fmtMcell(vB)}</td><td>${fmt1(pctB)}</td>
+      <td class="highlight-col">${fmtDeltaM(delta)}</td><td class="highlight-col">${fmtD(deltaPct)}</td>
+    </tr>`;
+  });
+  tbody += `</tbody>`;
+  table.innerHTML = colgroup+thead+tbody;
+}
+
+function renderCompBacenTable(){
+  renderCompBacenGenericTable('compBacenTable', DRE_BACEN_ROWS);
+}
+function renderCompBacenBreakdownTable(){
+  renderCompBacenGenericTable('compBacenBreakdownTable', DRE_BACEN_BREAKDOWN_ROWS);
+}
+
+// ============ PÁGINA: QUALIDADE DE CRÉDITO ============
+// ============ PÁGINA: QUALIDADE DE CRÉDITO (BACEN/BRGAAP) — SIMPLIFICADA ============
+RENDER.creditobacen = function(){
+  const el = document.getElementById('page-creditobacen');
+  el.innerHTML = `
+    <h1 class="page-title">Qualidade de Crédito (BRGAAP)</h1>
+    <div class="page-sub">Fonte: Bacen — IF.data, arquivos IF.data_ativo 2025, 2024, 1º trimestre 2026 e 1º semestre 2026. Valores em R$ milhões.</div>
+    <div class="table-wrap"><table id="creditoBacenTable"></table></div>
+    <div class="alert-bar"><b>Versão simplificada:</b> os arquivos de Ativo do IF.data trazem a Carteira de Crédito em 3 componentes (Valor Contábil Bruto, Perda Esperada, Líquido) — suficiente para ECL/Carteira Bruta. <b>Não é possível</b>, com os arquivos atuais do Bacen, reproduzir a segregação por Estágio 1/2/3, cobertura ECL do Estágio 3, aging de atraso ou write-off — essas informações só existem nas DFs (ver aba "Qualidade de Crédito" no modo DF's). RCI não aparece individualmente no IF.data.</div>
+    <div class="alert-bar"><b>Natureza patrimonial:</b> todos os valores desta página, incluindo "Perda Esperada / ECL Total", são <b>saldos de balanço</b> (posição em 12/2025, 12/2024, 1T2026 ou 1S2026), extraídos do arquivo IF.data_ativo. Não confundir com a linha "Resultado com Perda Esperada (ECL)" da página <b>DRE (BRGAAP)</b>, que é o <b>fluxo</b> (despesa líquida de ECL lançada no resultado durante o período) — os dois valores medem coisas diferentes e não precisam coincidir.</div>
+  `;
+  const rows = [
+    {label:'Carteira de Crédito Bruta (2025)', get:k=>DATA.bacen_bs[k].carteira_bruta[0], fmt:'m'},
+    {label:'Perda Esperada / ECL — Saldo Patrimonial (2025)', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[0], l=DATA.bacen_bs[k].carteira_liquida[0];
+        return (b===null||l===null)? null : (l-b);
+      }, fmt:'m'},
+    {label:'Carteira de Crédito Líquida (2025)', get:k=>DATA.bacen_bs[k].carteira_liquida[0], fmt:'m'},
+    {label:'Carteira de Crédito Bruta (1T2026)', get:k=>DATA.bacen_bs[k].carteira_bruta[2], fmt:'m'},
+    {label:'Perda Esperada / ECL — Saldo Patrimonial (1T2026)', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[2], l=DATA.bacen_bs[k].carteira_liquida[2];
+        return (b===null||l===null)? null : (l-b);
+      }, fmt:'m'},
+    {label:'Carteira de Crédito Líquida (1T2026)', get:k=>DATA.bacen_bs[k].carteira_liquida[2], fmt:'m'},
+    {label:'Carteira de Crédito Bruta (1S2026)', get:k=>DATA.bacen_bs[k].carteira_bruta[4], fmt:'m'},
+    {label:'Perda Esperada / ECL — Saldo Patrimonial (1S2026)', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[4], l=DATA.bacen_bs[k].carteira_liquida[4];
+        return (b===null||l===null)? null : (l-b);
+      }, fmt:'m'},
+    {label:'Carteira de Crédito Líquida (1S2026)', get:k=>DATA.bacen_bs[k].carteira_liquida[4], fmt:'m'},
+    {label:'ECL / Carteira Bruta — 2024 (%)', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[1], l=DATA.bacen_bs[k].carteira_liquida[1];
+        if(b===null||l===null||b===0) return null;
+        return Math.abs((l-b)/b)*100;
+      }, fmt:'p'},
+    {label:'ECL / Carteira Bruta — 2025 (%)', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[0], l=DATA.bacen_bs[k].carteira_liquida[0];
+        if(b===null||l===null||b===0) return null;
+        return Math.abs((l-b)/b)*100;
+      }, fmt:'p'},
+    {label:'ECL / Carteira Bruta — 1T2026 (%)', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[2], l=DATA.bacen_bs[k].carteira_liquida[2];
+        if(b===null||l===null||b===0) return null;
+        return Math.abs((l-b)/b)*100;
+      }, fmt:'p'},
+    {label:'ECL / Carteira Bruta — 1S2026 (%)', get:k=>{
+        const b=DATA.bacen_bs[k].carteira_bruta[4], l=DATA.bacen_bs[k].carteira_liquida[4];
+        if(b===null||l===null||b===0) return null;
+        return Math.abs((l-b)/b)*100;
+      }, fmt:'p', better:'low'},
+    {label:'Variação ECL/Carteira 2025→1S2026 (p.p.)', get:k=>{
+        const b0=DATA.bacen_bs[k].carteira_bruta[0], l0=DATA.bacen_bs[k].carteira_liquida[0];
+        const b4=DATA.bacen_bs[k].carteira_bruta[4], l4=DATA.bacen_bs[k].carteira_liquida[4];
+        if(b0===null||l0===null||b4===null||l4===null||b0===0||b4===0) return null;
+        return Math.abs((l4-b4)/b4)*100 - Math.abs((l0-b0)/b0)*100;
+      }, fmt:'pp'},
+  ];
+  renderComparisonTable('creditoBacenTable', rows);
+};
+
+RENDER.credito = function(){
+  const el = document.getElementById('page-credito');
+  el.innerHTML = `
+    <h1 class="page-title">Qualidade de Crédito</h1>
+    <div class="page-sub">Ano corrente (2025) — valores em R$ milhões, salvo indicação contrária</div>
+    <div class="alert-bar"><b>Comparabilidade:</b> GM não divulga a segregação por Estágio 1/2/3 em formato tabular numérico no DF (usa aging de atraso). STLA divulga Estágio 1/2/3 para 2025 (Nota 7.d, pág. 32). A Cobertura ECL Estágio 3 mede PDD do Estágio 3 sobre exposição do Estágio 3.</div>
+    <div class="table-wrap"><table id="credTable"></table></div>
+  `;
+  const rows = [
+    {label:'Carteira de Crédito Bruta', get:k=>DATA.carteira[k].bruta[0], fmt:'m'},
+    {label:'PDD / ECL Total', get:k=>DATA.carteira[k].pdd[0], fmt:'m'},
+    {label:'ECL / Carteira Bruta (%)', get:k=>safeDiv(DATA.carteira[k].pdd[0],DATA.carteira[k].bruta[0])*100, fmt:'p', better:'low'},
+    {label:'PDD Estágio 3', get:k=>DATA.estagios[k].pdd_e3[0], fmt:'m'},
+    {label:'Exposição Estágio 3', get:k=>DATA.estagios[k].e3[0], fmt:'m'},
+    {label:'Estágio 3 / Carteira Bruta (%)', get:k=>safeDiv(DATA.estagios[k].e3[0],DATA.carteira[k].bruta[0])*100, fmt:'p', better:'low'},
+    {label:'Cobertura ECL Estágio 3 (%)', get:k=>safeDiv(DATA.estagios[k].pdd_e3[0],DATA.estagios[k].e3[0])*100, fmt:'p', better:'high'},
+    {label:'Custo de Crédito (ECL DRE / ANR médio, a.a.)', get:k=>{
+        const v = DATA.dre[k].pdd_dre[0]; const anr = anrFor(k,0).value;
+        const p = safeDiv(v,anr); return p===null?null:Math.abs(p)*100;
+      }, fmt:'p', better:'low'},
+    {label:'Write-off (baixa para prejuízo)', get:k=>DATA.writeoff[k][0], fmt:'m'},
+  ];
+  renderComparisonTable('credTable', rows);
+};
+
+function fmtPctSigned(v){
+  if(v===null||v===undefined||isNaN(v)) return '<span class="nd">N/D</span>';
+  return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+}
+
+function renderComparisonTable(tableId, rows, opts={}){
+  const table = document.getElementById(tableId);
+  let thead = `<thead><tr><th>Indicador</th>`;
+  ORDER.forEach(k=> thead += `<th>${META[k].short}</th>`);
+  thead += `<th class="highlight-col">Melhor / Pior</th></tr></thead>`;
+  let tbody = `<tbody>`;
+  rows.forEach(r=>{
+    const vals={};
+    ORDER.forEach(k=>vals[k]=r.get(k));
+    const rankVals = {...vals};
+    if(r.excludeFromRanking){ r.excludeFromRanking.forEach(k=> delete rankVals[k]); }
+    const {leader,lag} = r.better ? leaderLaggard(rankVals, r.better==='high') : {leader:null,lag:null};
+    tbody += `<tr><td>${r.label}</td>`;
+    ORDER.forEach(k=>{
+      const v = vals[k];
+      let cell;
+      if(r.fmt==='m') cell = fmtMcell(v);
+      else if(r.fmt==='pp') cell = (v===null||v===undefined)? '<span class="nd">N/D</span>' : v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' p.p.';
+      else cell = fmtPctSigned(v);
+      const asterisk = (r.excludeFromRanking && r.excludeFromRanking.includes(k)) ? ' <sup title="Ver nota">*</sup>' : '';
+      tbody += `<td>${cell}${asterisk}</td>`;
+    });
+    // coluna final Melhor/Pior
+    let hl = '<span class="nd">—</span>';
+    if(leader && lag){
+      hl = `<span class="tag lead">${META[leader].short}</span> <span class="tag lag">${META[lag].short}</span>`;
+    } else if(!r.better){
+      hl = '<span class="tag nd">N/A</span>';
+    }
+    tbody += `<td class="highlight-col">${hl}</td>`;
+    tbody += `</tr>`;
+  });
+  tbody += `</tbody>`;
+  table.innerHTML = thead+tbody;
+}
+
+// ============ PÁGINA: KPI's FINANCEIROS ============
+// ============ PÁGINA: KPI's FINANCEIROS (BACEN/BRGAAP) ============
+RENDER.kpisbacen = function(){
+  const el = document.getElementById('page-kpisbacen');
+  el.innerHTML = `
+    <h1 class="page-title">KPI's Financeiros (BRGAAP)</h1>
+    <div class="page-sub">Fonte: Bacen — IF.data (Balanço 2025/2024/1T2026/1T2025/1S2026 + DRE 2025/2024/1T2026/1T2025/1S2026). Valores em R$ milhões, salvo indicação contrária.</div>
+    <div class="filters">
+      <label style="font-size:13px;align-self:center;color:var(--text-mut);">Período:</label>
+      <select id="kpisBacenPeriodSel">
+        <option value="2026-1S">1º semestre 2026</option>
+        <option value="2026-T1">1º trimestre 2026</option>
+        <option value="2025">2025 (ano completo)</option>
+        <option value="2025-T1">1º trimestre 2025</option>
+        <option value="2024">2024 (ano completo)</option>
+      </select>
+    </div>
+    <div class="alert-bar"><b>Equivalências Bacen:</b> "Resultado Operacional" = linha (w) Resultado Antes da Tributação e Participações; "Custo de Crédito" = linha (f) Resultado com Perda Esperada; "NIM" = linha (k) Resultado de Intermediação Financeira / ANR — conceito mais amplo que o NIM das DFs, pois (k) já inclui ECL e derivativos. RCI não aparece individualmente no IF.data.</div>
+    <div class="alert-bar" id="kpisBacenPeriodAlert"></div>
+    <div class="table-wrap"><table id="kpisBacenTable"></table></div>
+  `;
+  document.getElementById('kpisBacenPeriodSel').onchange = renderKpisBacenTable;
+  renderKpisBacenTable();
+};
+
+function renderKpisBacenTable(){
+  const period = document.getElementById('kpisBacenPeriodSel').value;
+  const isQuarter = period==='2026-T1' || period==='2025-T1' || period==='2026-1S';
+  let pIdx, pIdxPrev;
+  if(period==='2026-1S'){ pIdx=4; pIdxPrev=0; }
+  else if(period==='2026-T1'){ pIdx=2; pIdxPrev=0; }
+  else if(period==='2025-T1'){ pIdx=3; pIdxPrev=1; } // 1T2025 real (índice 3) vs. 2024 (ponta anterior)
+  else if(period==='2024'){ pIdx=1; pIdxPrev=1; } // sem balanço de 2023 nesta fonte — usa 2024 pontual
+  else { pIdx=0; pIdxPrev=1; }
+
+  document.getElementById('kpisBacenPeriodAlert').innerHTML = period==='2026-1S'
+    ? '<b>1S2026:</b> Lucro Líquido do semestre é anualizado (×2) para os indicadores de rentabilidade (ROAE, ROA, Custo de Crédito, NIM) — valores absolutos da DRE não são anualizados. PL/Ativo médios usam (2025 + 1S2026)/2.'
+    : period==='2026-T1'
+    ? '<b>1T2026:</b> Lucro Líquido do trimestre é anualizado (×4) para os indicadores de rentabilidade (ROAE, ROA, Custo de Crédito, NIM) — valores absolutos da DRE não são anualizados. PL/Ativo médios usam (2025 + 1T2026)/2.'
+    : period==='2025-T1'
+    ? '<b>1T2025:</b> Lucro Líquido do trimestre é anualizado (×4). PL/Ativo médios usam (2024 + 1T2025)/2, com balanço real do IF.data para o trimestre.'
+    : period==='2024'
+    ? '<b>2024:</b> Lucro Líquido anual (soma dos 2 semestres, layout Bacen anterior — algumas linhas N/D, ver alerta na DRE Bacen). PL/Ativo usam o saldo pontual de 2024 (sem 2023 disponível nesta fonte para média).'
+    : '<b>2025:</b> Lucro Líquido anual (soma dos 2 semestres). PL/Ativo médios usam (2025 + 2024)/2.';
+
+  const rows = [
+    {label:'Carteira de Crédito (líquida)', get:k=>DATA.bacen_bs[k].carteira_liquida[pIdx], fmt:'m'},
+    {label:'ANR — Carteira Média (Bacen)', get:k=>anrForBacen(k, period), fmt:'m'},
+    {label:'Ativo Total', get:k=>DATA.bacen_bs[k].ativo_total[pIdx], fmt:'m'},
+    {label:'Patrimônio Líquido', get:k=>DATA.bacen_bs[k].patrimonio_liquido[pIdx], fmt:'m'},
+    {label:'Patrimônio Líquido Médio', get:k=>avg(DATA.bacen_bs[k].patrimonio_liquido[pIdx],DATA.bacen_bs[k].patrimonio_liquido[pIdxPrev]), fmt:'m'},
+    {label:'Resultado Antes da Tributação / Ativo Total (%)', get:k=>{
+        const bdre=DATA.dre_bacen[period][k];
+        if(!bdre || bdre.w===null) return null;
+        const w = isQuarter? bdre.w*bacenAnnualFactor(period) : bdre.w;
+        const p = safeDiv(w, DATA.bacen_bs[k].ativo_total[pIdx]);
+        return p===null? null : p*100;
+      }, fmt:'p', better:'high'},
+    {label:'Custo de Crédito / ANR (% a.a.)', get:k=>{
+        const bdre=DATA.dre_bacen[period][k];
+        if(!bdre || bdre.f===null) return null;
+        const f = isQuarter? bdre.f*bacenAnnualFactor(period) : bdre.f;
+        const p = safeDiv(f, anrForBacen(k, period));
+        return p===null? null : Math.abs(p)*100;
+      }, fmt:'p', better:'low'},
+    {label:'ROAE — Lucro / PL Médio (%)', get:k=> roaeForBacen(k, period), fmt:'p', better:'high'},
+    {label:'ROA — Lucro / Ativo Médio (%)', get:k=>{
+        const bdre=DATA.dre_bacen[period][k];
+        if(!bdre || bdre.z===null) return null;
+        const z = isQuarter? bdre.z*bacenAnnualFactor(period) : bdre.z;
+        const ativoMedio = avg(DATA.bacen_bs[k].ativo_total[pIdx],DATA.bacen_bs[k].ativo_total[pIdxPrev]);
+        const p = safeDiv(z, ativoMedio);
+        return p===null? null : p*100;
+      }, fmt:'p', better:'high'},
+    {label:'NIM (amplo) — Result. Intermediação Financ. / ANR (%)', get:k=>{
+        const bdre=DATA.dre_bacen[period][k];
+        if(!bdre || bdre.k===null) return null;
+        const kk = isQuarter? bdre.k*bacenAnnualFactor(period) : bdre.k;
+        const p = safeDiv(kk, anrForBacen(k, period));
+        return p===null? null : p*100;
+      }, fmt:'p', better:'high'},
+    {label:'Índice de Eficiência (%)', get:k=>{
+        const bdre=DATA.dre_bacen[period][k];
+        if(!bdre || bdre.o===null || bdre.p===null || bdre.k===null) return null;
+        const desp = Math.abs(bdre.o) + Math.abs(bdre.p);
+        const rec = bdre.k + bdre.m + bdre.n;
+        if(rec===0) return null;
+        return (desp/rec)*100; // proporção não muda ao anualizar (numerador e denominador na mesma base trimestral)
+      }, fmt:'p', better:'low'},
+    {label:'Taxa Efetiva de Imposto (%)', get:k=>{
+        const bdre=DATA.dre_bacen[period][k];
+        if(!bdre || bdre.x===null || bdre.w===null) return null;
+        const p = safeDiv(-bdre.x, bdre.w); // proporção não muda ao anualizar
+        return p===null? null : p*100;
+      }, fmt:'p', better:'low'},
+  ];
+  renderComparisonTable('kpisBacenTable', rows);
+}
+
+RENDER.kpis = function(){
+  const el = document.getElementById('page-kpis');
+  el.innerHTML = `
+    <h1 class="page-title">KPI's Financeiros</h1>
+    <div class="page-sub">Ano corrente (2025) — valores em R$ milhões, salvo indicação contrária</div>
+    <div class="alert-bar"><b>* ROAE da STLA:</b> usa Equity Ajustado Médio (2025+2024)/2 = PL Atribuível aos Controladores + NCI do Banco Stellantis, desconsiderando o efeito dos FIDCs (NCI de terceiros) no Patrimônio Líquido. Demais bancos usam PL Médio (2025+2024)/2. A linha "ROE Pontual (não ajustado)" mostra o efeito da diferença. Detalhamento completo na página Balanço Patrimonial.</div>
+    <div class="table-wrap"><table id="kpiTable"></table></div>
+  `;
+  const rows = [
+    {label:'Carteira de Crédito (líquida)', get:k=>DATA.carteira[k].liquida[0], fmt:'m'},
+    {label:'ANR — Carteira Média (líquida)', get:k=>avg(DATA.carteira[k].liquida[0],DATA.carteira[k].liquida[1]), fmt:'m'},
+    {label:'Ativo Total', get:k=>DATA.bs[k].ativo[0], fmt:'m'},
+    {label:'Patrimônio Líquido', get:k=>DATA.bs[k].pl[0], fmt:'m'},
+    {label:'Patrimônio Líquido Médio', get:k=>avg(DATA.bs[k].pl[0],DATA.bs[k].pl[1]), fmt:'m'},
+    {label:'Resultado Operacional / Ativo Total (%)', get:k=>safeDiv(DATA.dre[k].resultado_operacional[0],DATA.bs[k].ativo[0])*100, fmt:'p', better:'high'},
+    {label:'Custo de Crédito / ANR (% a.a.)', get:k=>{
+        const v=DATA.dre[k].pdd_dre[0]; const anr=avg(DATA.carteira[k].liquida[0],DATA.carteira[k].liquida[1]);
+        const p=safeDiv(v,anr); return p===null?null:Math.abs(p)*100;
+      }, fmt:'p', better:'low'},
+    {label:'ROAE — Lucro / Equity* (%)', get:k=> roeFor(k), fmt:'p', better:'high'},
+    {label:'ROE Pontual (não ajustado) — Lucro / PL Final (%)', get:k=>safeDiv(DATA.dre[k].lucro_liquido[0], DATA.bs[k].pl[0])*100, fmt:'p', better:'high'},
+    {label:'ROA — Lucro / Ativo Médio (%)', get:k=>safeDiv(DATA.dre[k].lucro_liquido[0], avg(DATA.bs[k].ativo[0],DATA.bs[k].ativo[1]))*100, fmt:'p', better:'high'},
+    {label:'NIM — Res. Líquido de Juros / ANR (% a.a.)', get:k=>safeDiv(DATA.dre[k].resultado_liquido_juros[0], avg(DATA.carteira[k].liquida[0],DATA.carteira[k].liquida[1]))*100, fmt:'p', better:'high'},
+    {label:'Índice de Eficiência (%)', get:k=>indiceEficiencia(k), fmt:'p', better:'low'},
+    {label:'Taxa Efetiva de Imposto (%)', get:k=>safeDiv(-DATA.dre[k].impostos[0], DATA.dre[k].resultado_antes_impostos[0])*100, fmt:'p', better:'low'},
+  ];
+  renderComparisonTable('kpiTable', rows);
+};
+
+function indiceEficiencia(k){
+  const d = DATA.dre[k];
+  const desp = (d.despesas_pessoal && d.despesas_pessoal[0]!==null? Math.abs(d.despesas_pessoal[0]):0) + (d.despesas_adm && d.despesas_adm[0]!==null? Math.abs(d.despesas_adm[0]):0);
+  const rec = (d.resultado_liquido_juros[0]||0) + (d.tarifas_servicos&&d.tarifas_servicos[0]||0) + (d.outras_receitas_op&&d.outras_receitas_op[0]||0);
+  if(desp===0 || rec===0) return null;
+  return (desp/rec)*100;
+}
+
+// ============ PÁGINA: KPI's DE CAPITAL ============
+RENDER.capital = function(){
+  const el = document.getElementById('page-capital');
+  el.innerHTML = `
+    <h1 class="page-title">KPI's de Capital</h1>
+    <div class="page-sub">Valores em R$ milhões, salvo indicação contrária. Índice de Basileia, PR, RWA e Nível I confirmados diretamente no Bacen (IF.data, base 12/2025, 12/2024, 03/2026 e 06/2026).</div>
+    <div class="alert-bar"><b>Fonte oficial Bacen (IF.data):</b> ${DATA.capital_bacen_meta.divergencias}</div>
+    <div class="alert-bar"><b>* RCI:</b> valor de Basileia exibido é o Índice do <b>Conglomerado Prudencial Santander</b> (do qual o RCI faz parte para fins de apuração de capital, conforme o próprio DF do RCI), não um índice isolado do RCI Brasil. Por isso, o RCI é excluído do cálculo de "Melhor/Pior" nesta métrica — não é comparável em base isolada às demais captives. PR e RWA do Santander: R$ ${fmtM(DATA.santander_context.pr[0])} milhões e R$ ${fmtM(DATA.santander_context.rwa[0])} milhões (2025) — escala muito superior às demais captives, por isso não exibidos na tabela principal.</div>
+    <div class="alert-bar"><b>Exceção:</b> a linha "Capital Social" desta página vem das DFs (não há essa informação nos arquivos de Ativo/Passivo do IF.data) — todas as demais linhas são 100% Bacen.</div>
+    <div class="table-wrap"><table id="capTable"></table></div>
+
+    <div class="section-title">Fonte por Instituição</div>
+    <div class="comp-grid" id="bacenSourceGrid"></div>
+  `;
+  const rows = [
+    {label:'Índice de Basileia — 2025 (%)', get:k=>DATA.basileia[k][0], fmt:'p', better:'high', excludeFromRanking:['rci']},
+    {label:'Índice de Basileia — 2024 (%)', get:k=>DATA.basileia[k][1], fmt:'p'},
+    {label:'Índice de Basileia — 1T2026 (%)', get:k=>DATA.basileia[k][2], fmt:'p', better:'high', excludeFromRanking:['rci']},
+    {label:'Índice de Basileia — 1S2026 (%)', get:k=>DATA.basileia[k][3], fmt:'p', better:'high', excludeFromRanking:['rci']},
+    {label:'Variação 2024→2025 (p.p.)', get:k=>{
+        const a=DATA.basileia[k][0], b=DATA.basileia[k][1];
+        if(a===null||b===null) return null; return a-b;
+      }, fmt:'pp'},
+    {label:'Variação 2025→1T2026 (p.p.)', get:k=>{
+        const a=DATA.basileia[k][2], b=DATA.basileia[k][0];
+        if(a===null||b===null) return null; return a-b;
+      }, fmt:'pp'},
+    {label:'Variação 1T2026→1S2026 (p.p.)', get:k=>{
+        const a=DATA.basileia[k][3], b=DATA.basileia[k][2];
+        if(a===null||b===null) return null; return a-b;
+      }, fmt:'pp'},
+    {label:'Capital Nível I — 2025 (%)', get:k=>DATA.basileia_nivel1[k][0], fmt:'p', better:'high', excludeFromRanking:['rci']},
+    {label:'Capital Nível I — 1T2026 (%)', get:k=>DATA.basileia_nivel1[k][2], fmt:'p', better:'high', excludeFromRanking:['rci']},
+    {label:'Capital Nível I — 1S2026 (%)', get:k=>DATA.basileia_nivel1[k][3], fmt:'p', better:'high', excludeFromRanking:['rci']},
+    {label:'Patrimônio de Referência (PR) — 2025', get:k=>DATA.pr[k][0], fmt:'m'},
+    {label:'Patrimônio de Referência (PR) — 1T2026', get:k=>DATA.pr[k][2], fmt:'m'},
+    {label:'Patrimônio de Referência (PR) — 1S2026', get:k=>DATA.pr[k][3], fmt:'m'},
+    {label:'Ativos Ponderados pelo Risco (RWA) — 2025', get:k=>DATA.rwa[k][0], fmt:'m'},
+    {label:'Ativos Ponderados pelo Risco (RWA) — 1T2026', get:k=>DATA.rwa[k][2], fmt:'m'},
+    {label:'Ativos Ponderados pelo Risco (RWA) — 1S2026', get:k=>DATA.rwa[k][3], fmt:'m'},
+    {label:'Capital Social (DF, 2025)', get:k=>DATA.bs[k].capital_social[0], fmt:'m'},
+  ];
+  renderComparisonTable('capTable', rows);
+
+  const grid = document.getElementById('bacenSourceGrid');
+  ORDER.forEach(k=>{
+    const m = META[k];
+    grid.innerHTML += `
+    <div class="comp-card" style="border-top:4px solid ${m.color}">
+      <div class="head"><div class="dot" style="background:${m.color}"></div><div class="name">${m.short}</div></div>
+      <dl><dd style="font-size:12px;">${DATA.basileia_obs[k] || 'N/D'}</dd></dl>
+    </div>`;
+  });
+};// ============ PÁGINA: ESTRUTURA DE CAPTAÇÃO ============
+RENDER.captacao = function(){
+  const el = document.getElementById('page-captacao');
+  el.innerHTML = `
+    <h1 class="page-title">Estrutura de Captação</h1>
+    <div class="page-sub">Ano corrente (2025) — valores em R$ milhões</div>
+
+    <div class="section-title">Mix de Funding por Produto (R$ milhões e % do total)</div>
+    <div class="table-wrap"><table id="fundMixTable"></table></div>
+
+    <div class="section-title">Custo Médio de Captação (Estimado) — Memória de Cálculo</div>
+    <div class="page-sub" style="margin-bottom:12px;">Custo Médio = Despesa de Captação (juros pagos sobre depósitos, letras financeiras e empréstimos, excluindo ECL e FGC) ÷ Captação Total Média (2025+2024)/2 — metodologia de médias de dois períodos para indicadores de fluxo sobre estoque. É o custo médio do estoque, não o custo marginal de novas captações.</div>
+    <div class="table-wrap"><table id="custoCaptTable"></table></div>
+
+    <div class="section-title">Captação com Partes Relacionadas</div>
+    <div class="page-sub" style="margin-bottom:12px;">Identificação de depósitos e instrumentos de captação junto a montadoras/distribuidoras e demais empresas do mesmo grupo econômico, conforme Nota de Partes Relacionadas de cada DF (31/12/2025).</div>
+    <div class="table-wrap"><table id="partesRelTable"></table></div>
+    <div class="comp-grid" id="partesRelDetalhe" style="margin-top:14px;"></div>
+  `;
+
+  // Tabela de mix — colunas pareadas R$/% por banco (lado a lado, não em linha separada)
+  const produtos = [
+    {key:'depositos', label:'Depósitos'},
+    {key:'captacao_mercado', label:'Captação de Mercado (LF/LC/Aceites)'},
+    {key:'emprestimos_exterior', label:'Empréstimos no Exterior'},
+    {key:'cessao', label:'Securitização'},
+  ];
+  const mixTable = document.getElementById('fundMixTable');
+  let thead = `<thead><tr><th rowspan="2">Produto</th>`;
+  ORDER.forEach(k=> thead += `<th colspan="2" style="text-align:center;">${META[k].short}</th>`);
+  thead += `</tr><tr>`;
+  ORDER.forEach(()=> thead += `<th style="text-align:center;">R$ mi</th><th style="text-align:center;">%</th>`);
+  thead += `</tr></thead>`;
+  let tbody = `<tbody>`;
+  produtos.forEach(p=>{
+    tbody += `<tr><td>${p.label}</td>`;
+    ORDER.forEach(k=>{
+      const f = DATA.funding[k];
+      const total = (f.depositos[0]||0)+(f.captacao_mercado[0]||0)+(f.emprestimos_exterior[0]||0)+(f.cessao[0]||0);
+      const v = f[p.key][0];
+      const pct = (v===null||v===undefined||total===0)? null : (v/total)*100;
+      tbody += `<td>${fmtMcell(v)}</td><td>${pct===null? '<span class="nd">N/D</span>' : pct.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%'}</td>`;
+    });
+    tbody += `</tr>`;
+  });
+  tbody += `<tr class="subtotal"><td>Total Captação</td>`;
+  ORDER.forEach(k=>{
+    const f = DATA.funding[k];
+    const total = (f.depositos[0]||0)+(f.captacao_mercado[0]||0)+(f.emprestimos_exterior[0]||0)+(f.cessao[0]||0);
+    tbody += `<td>${fmtMcell(total)}</td><td>100,0%</td>`;
+  });
+  tbody += `</tr></tbody>`;
+  mixTable.innerHTML = thead+tbody;
+
+  // Custo médio de captação — memória de cálculo completa
+  function fundTotal(k, yearIdx){
+    const f = DATA.funding[k];
+    return (f.depositos[yearIdx]||0)+(f.captacao_mercado[yearIdx]||0)+(f.emprestimos_exterior[yearIdx]||0)+(f.cessao[yearIdx]||0);
+  }
+  const custoTable = document.getElementById('custoCaptTable');
+  let cthead = `<thead><tr><th>Etapa do Cálculo</th>`;
+  ORDER.forEach(k=> cthead += `<th>${META[k].short}</th>`);
+  cthead += `<th class="highlight-col">Melhor / Pior</th></tr></thead>`;
+  let ctbody = `<tbody>`;
+  ctbody += `<tr><td>(a) Despesa de Captação — 2025</td>`;
+  ORDER.forEach(k=> ctbody += `<td>${fmtMcell(DATA.despesa_captacao[k])}</td>`);
+  ctbody += `<td class="highlight-col"><span class="tag nd">N/A</span></td></tr>`;
+  ctbody += `<tr><td>(b) Captação Total — 2025 (ponta)</td>`;
+  ORDER.forEach(k=> ctbody += `<td>${fmtMcell(fundTotal(k,0))}</td>`);
+  ctbody += `<td class="highlight-col"><span class="tag nd">N/A</span></td></tr>`;
+  ctbody += `<tr><td>(c) Captação Total — 2024 (ponta)</td>`;
+  ORDER.forEach(k=> ctbody += `<td>${fmtMcell(fundTotal(k,1))}</td>`);
+  ctbody += `<td class="highlight-col"><span class="tag nd">N/A</span></td></tr>`;
+  ctbody += `<tr class="subtotal"><td>(d) Captação Média = [(b)+(c)] / 2</td>`;
+  ORDER.forEach(k=> ctbody += `<td>${fmtMcell(avg(fundTotal(k,0),fundTotal(k,1)))}</td>`);
+  ctbody += `<td class="highlight-col"><span class="tag nd">N/A</span></td></tr>`;
+
+  const custoVals = {};
+  ORDER.forEach(k=> custoVals[k] = safeDiv(DATA.despesa_captacao[k], avg(fundTotal(k,0),fundTotal(k,1)))*100 );
+  const {leader:custoLead, lag:custoLag} = leaderLaggard(custoVals, false);
+  ctbody += `<tr class="subtotal"><td>Custo Médio Estimado = (a) / (d)</td>`;
+  ORDER.forEach(k=> ctbody += `<td>${fmtPctSigned(custoVals[k])}</td>`);
+  ctbody += `<td class="highlight-col">${custoLead&&custoLag? `<span class="tag lead">${META[custoLead].short}</span> <span class="tag lag">${META[custoLag].short}</span>` : '<span class="nd">—</span>'}</td></tr>`;
+  ctbody += `</tbody>`;
+  custoTable.innerHTML = cthead+ctbody;
+
+  // Partes relacionadas
+  const prRows = [
+    {label:'Captação com Partes Relacionadas', get:k=>DATA.partes_relacionadas[k].valor, fmt:'m'},
+    {label:'% sobre Total de Depósitos', get:k=>DATA.partes_relacionadas[k].pct_depositos, fmt:'p', better:null},
+  ];
+  renderComparisonTable('partesRelTable', prRows);
+
+  const detEl = document.getElementById('partesRelDetalhe');
+  ORDER.forEach(k=>{
+    const m = META[k]; const pr = DATA.partes_relacionadas[k];
+    detEl.innerHTML += `
+    <div class="comp-card" style="border-top:4px solid ${m.color}">
+      <div class="head"><div class="dot" style="background:${m.color}"></div><div class="name">${m.short}</div></div>
+      <dl><dd style="font-size:11.5px;line-height:1.55;">${pr.detalhe}</dd></dl>
+    </div>`;
+  });
+};
+
+// ============ PÁGINA: ALERTAS E RANKING ============
+RENDER.ranking = function(){
+  const el = document.getElementById('page-ranking');
+  const roe = {}, custoCredito={}, basileia={}, estagio3={};
+  ORDER.forEach(k=>{
+    roe[k] = roeFor(k);
+    const v=DATA.dre[k].pdd_dre[0]; const anr=avg(DATA.carteira[k].liquida[0],DATA.carteira[k].liquida[1]);
+    const p=safeDiv(v,anr); custoCredito[k]= p===null?null:Math.abs(p)*100;
+    basileia[k]=DATA.basileia[k][0];
+    estagio3[k]=safeDiv(DATA.estagios[k].e3[0],DATA.carteira[k].bruta[0])*100;
+  });
+  const rkROE = leaderLaggard(roe,true);
+  const rkCusto = leaderLaggard(custoCredito,false);
+  const basileiaRank = {...basileia}; delete basileiaRank.rci; // RCI = índice do Santander, não comparável isoladamente
+  const rkBas = leaderLaggard(basileiaRank,true);
+  const rkE3 = leaderLaggard(estagio3,false);
+
+  el.innerHTML = `
+    <h1 class="page-title">Alertas e Ranking</h1>
+    <div class="page-sub">Síntese de líderes e lanternas — base 2025. * ROAE da STLA (modo DF's) usa Equity Ajustado (exclui efeito FIDC) — ver Balanço Patrimonial.</div>
+    <div class="grid4">
+      <div class="card"><h3>ROAE (Rentabilidade)*</h3>
+        <p style="margin:4px 0;">Líder: <b style="color:${rkROE.leader?bankColor(rkROE.leader):'#999'}">${rkROE.leader?META[rkROE.leader].short:'N/D'}</b> (${fmtPctSigned(roe[rkROE.leader])})</p>
+        <p style="margin:4px 0;">Lanterna: <b style="color:${rkROE.lag?bankColor(rkROE.lag):'#999'}">${rkROE.lag?META[rkROE.lag].short:'N/D'}</b> (${fmtPctSigned(roe[rkROE.lag])})</p>
+      </div>
+      <div class="card"><h3>Custo de Crédito (menor é melhor)</h3>
+        <p style="margin:4px 0;">Melhor: <b style="color:${rkCusto.leader?bankColor(rkCusto.leader):'#999'}">${rkCusto.leader?META[rkCusto.leader].short:'N/D'}</b> (${fmtPctSigned(custoCredito[rkCusto.leader])})</p>
+        <p style="margin:4px 0;">Pior: <b style="color:${rkCusto.lag?bankColor(rkCusto.lag):'#999'}">${rkCusto.lag?META[rkCusto.lag].short:'N/D'}</b> (${fmtPctSigned(custoCredito[rkCusto.lag])})</p>
+      </div>
+      <div class="card"><h3>Índice de Basileia</h3>
+        <p style="margin:4px 0;">Mais capitalizado: <b style="color:${rkBas.leader?bankColor(rkBas.leader):'#999'}">${rkBas.leader?META[rkBas.leader].short:'N/D'}</b> (${fmtPctSigned(basileia[rkBas.leader])})</p>
+        <p style="margin:4px 0;">Menos capitalizado: <b style="color:${rkBas.lag?bankColor(rkBas.lag):'#999'}">${rkBas.lag?META[rkBas.lag].short:'N/D'}</b> (${fmtPctSigned(basileia[rkBas.lag])})</p>
+        <p style="font-size:11px;color:var(--text-mut);">RCI excluído do ranking (índice reflete o Conglomerado Santander, não o RCI isoladamente).</p>
+      </div>
+      <div class="card"><h3>Estágio 3 / Carteira Bruta</h3>
+        <p style="margin:4px 0;">Melhor qualidade: <b style="color:${rkE3.leader?bankColor(rkE3.leader):'#999'}">${rkE3.leader?META[rkE3.leader].short:'N/D'}</b> (${fmtPctSigned(estagio3[rkE3.leader])})</p>
+        <p style="margin:4px 0;">Pior qualidade: <b style="color:${rkE3.lag?bankColor(rkE3.lag):'#999'}">${rkE3.lag?META[rkE3.lag].short:'N/D'}</b> (${fmtPctSigned(estagio3[rkE3.lag])})</p>
+        <p style="font-size:11px;color:var(--text-mut);">GM: N/D (sem tabela de estágios divulgada, apenas aging). STLA: Estágio 3 disponível somente para 2025.</p>
+      </div>
+    </div>
+    <div class="section-title">Alertas de Comparabilidade e Governança de Dados</div>
+    <div class="alert-bar">
+      <b>1. Padrão contábil misto:</b> IFRS (Toyota, Volkswagen, GM) vs. BR GAAP/COSIF (STLA, RCI) — comparações diretas de margens e provisões requerem cautela.<br>
+      <b>2. Res. CMN 4.966/21 (vigente desde 2025):</b> aplica-se a todas as instituições reguladas pelo Bacen, alinhando o BR GAAP/COSIF ao IFRS 9 — Toyota e GM citam a norma no DF (impacto pontual, já reportavam ECL via IFRS 9). Para STLA e RCI, que reportam em BR GAAP/COSIF, a mudança é estrutural: migração do modelo de perdas incorridas (rating C1-C5 / AA-H) para Estágios 1/2/3. Balanço, DRE e carteira de crédito de 2024/2023 estão disponíveis para os dois e são comparáveis; a qualidade de crédito por estágio não é diretamente comparável entre 2025 e os anos anteriores, por mudança de modelo (não de risco).<br>
+      <b>3. Perímetro societário da STLA:</b> Stellantis Financiamentos, Banco Stellantis e os FIDCs (Vita Auto, MOAB, Mobility I e II) já compunham o conglomerado prudencial desde 2023 — o crescimento de ativos observado é predominantemente orgânico, não decorrente de fusão.<br>
+      <b>4. Basileia:</b> GM não divulga o índice no próprio DF, mas o valor foi obtido diretamente do Bacen (IF.data) e incorporado ao dashboard. RCI apura em conjunto com o Conglomerado Santander (sem índice individual em nenhuma fonte, incluindo o Bacen).<br>
+      <b>5. Estágios / qualidade de crédito:</b> GM não detalha Estágio 1/2/3 em tabela numérica em nenhum ano (usa aging). STLA divulga Estágio 1/2/3 apenas para 2025 (Nota 7.d); 2024/2023 usavam o modelo de rating C1-C5 (anterior à Res. 4.966/21). RCI usava o modelo de rating AA-H até 2024/2023.<br>
+      <b>6. Métricas não disponíveis nas DFs:</b> Ticket médio, penetração de financiamento sobre vendas, spread implícito por contrato e custo por contrato exigem dados de originação/produção não divulgados nas Demonstrações Financeiras — não fabricados neste dashboard.
+    </div>
+  `;
+};
+
+// ============ PÁGINA: KEY HIGHLIGHTS ============
+RENDER.highlights = function(){
+  const el = document.getElementById('page-highlights');
+  const isBacen = currentSource === 'bacen';
+  let cards = '';
+
+  const RATIONALE = {
+    stla: [
+      `Lucro líquido cresceu 70,1% e a carteira bruta 58,3% — expansão consistente com o mesmo perímetro societário desde 2023 (não há efeito de fusão/aquisição distorcendo a comparação).`,
+      `Queda do Índice de Basileia (17,87% → 14,85%) reflete o RWA crescendo mais rápido que o capital, dado o forte ritmo de expansão da carteira — ponto de atenção para monitorar via KPI's de Capital.`
+    ],
+    gm: [
+      `FIDC (Financiamento a Concessionárias) foi descontinuado em dez/2025 — reduz uma fonte de funding e de diversificação de risco, mas também tira RWA do balanço.`,
+      `Queda de 22,4% no lucro líquido: Resultado Líquido de Juros retraiu (R$1.606,8 mi → R$1.469,0 mi) mesmo com a carteira praticamente estável (+0,1%) — sugere pressão de custo de captação sobre a margem.`,
+      `Índice de Basileia subiu (18,78% → 19,14%), consistente com portfólio estável e a descontinuação do FIDC.`
+    ],
+    toyota: [
+      `Lucro líquido caiu 19,0% (R$299,2 mi → R$242,5 mi), puxado por uma reversão de R$389,7 mi em "Ganhos (Perdas) com Ativos e Passivos Financeiros" — em 2024 essa linha foi positiva em R$348,1 mi, um swing de ~R$738 mi entre os períodos, provavelmente ligado a marcação a mercado de instrumentos financeiros/hedge cambial da matriz.`,
+      `Em contrapartida, despesa de juros caiu com força (R$1.606,2 mi → R$1.104,7 mi), indicando custo de captação mais baixo no período.`,
+      `Basileia caiu de 15,50% para 12,99%, com RWA crescendo mais que o capital.`
+    ],
+    volks: [
+      `Lucro líquido subiu 30,1% (R$812,9 mi → R$1.057,8 mi), apoiado pelo crescimento da carteira (+12,6%) e por um efeito não recorrente: transferência das operações de financiamento de caminhões e ônibus para o Banco Traton do Brasil, que gerou R$198,6 mi em outras receitas operacionais em 2025 (zero em 2024) — vale isolar esse efeito ao projetar recorrência de resultado.`,
+      `Basileia subiu ligeiramente (12,48% → 12,94%), com o PL crescendo (+11,7%) em ritmo próximo ao do RWA.`
+    ],
+    rci: [
+      `Lucro líquido subiu 44,3% (R$239,8 mi → R$346,1 mi), impulsionado principalmente por uma forte queda na despesa de provisão para perdas esperadas (R$140,0 mi em 2024 para R$29,2 mi em 2025 — redução de R$110,8 mi) — sinaliza melhora na qualidade de crédito ou menor necessidade de reforço de provisão no período, não necessariamente ganho operacional recorrente.`
+    ]
+  };
+
+  if(isBacen){
+    ORDER.forEach(k=>{
+      const m = META[k];
+      const bs = DATA.bacen_bs[k];
+      const bdre = DATA.dre_bacen['2025'][k];
+      const hasPrev = bs.ativo_total[1]!==null;
+      const ativoVar = hasPrev? safeDiv(bs.ativo_total[0]-bs.ativo_total[1], bs.ativo_total[1])*100 : null;
+      const carteiraVar = bs.carteira_bruta[1]!==null? safeDiv(bs.carteira_bruta[0]-bs.carteira_bruta[1], bs.carteira_bruta[1])*100 : null;
+      const basVar = (DATA.basileia[k][0]!==null && DATA.basileia[k][1]!==null)? (DATA.basileia[k][0]-DATA.basileia[k][1]) : null;
+
+      let items = [];
+      if(bdre && bdre.z!==null){
+        items.push(`Lucro líquido de R$ ${fmtM(bdre.z)} milhões em 2025 (Bacen) — sem comparativo 2024 nesta fonte (DRE Bacen disponível só para 2025).`);
+      } else {
+        items.push(`Lucro líquido não disponível individualmente no IF.data (apurado em conjunto com o Conglomerado Santander).`);
+      }
+      items.push(`Ativo total de R$ ${fmtM(bs.ativo_total[0])} milhões${ativoVar!==null? ` (${ativoVar>=0?'+':''}${ativoVar.toFixed(1)}% vs. 2024)`:''}.`);
+      items.push(`Carteira de crédito bruta de R$ ${fmtM(bs.carteira_bruta[0])} milhões${carteiraVar!==null? ` (${carteiraVar>=0?'+':''}${carteiraVar.toFixed(1)}% vs. 2024)`:''}.`);
+      if(DATA.basileia[k][0]!==null && k!=='rci'){
+        items.push(`Índice de Basileia em ${DATA.basileia[k][0].toFixed(2)}%${basVar!==null? ` (${basVar>=0?'+':''}${basVar.toFixed(2)} p.p. vs. 2024)`:''}.`);
+      } else if(k==='rci'){
+        items.push(`Índice de Basileia do Conglomerado Santander (do qual o RCI faz parte para fins de capital): ${DATA.basileia[k][0].toFixed(2)}% — não é um índice isolado do RCI.`);
+      }
+      if(k==='rci') items.push(`RCI não aparece individualmente no IF.data — Ativo, Carteira e Lucro Líquido acima não disponíveis nesta fonte.`);
+
+      cards += `<div class="hl-card"><div class="stripe" style="background:${m.color}"></div><h4>${m.name}</h4><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul></div>`;
+    });
+    el.innerHTML = `
+      <h1 class="page-title">Key Highlights — Bacen (BRGAAP)</h1>
+      <div class="page-sub">Base IF.data — 2025 vs. 2024 para Ativo/Carteira/Basileia; Lucro Líquido apenas 2025 (DRE Bacen 2024 ainda não disponível).</div>
+      <div class="hl-grid">${cards}</div>
+    `;
+    return;
+  }
+
+  ORDER.forEach(k=>{
+    const m = META[k];
+    const d = DATA.dre[k]; const b = DATA.bs[k]; const c = DATA.carteira[k];
+    const hasPrev = b.pl[1]!==null && b.ativo[1]!==null;
+    const llVar = hasPrev? safeDiv(d.lucro_liquido[0]-d.lucro_liquido[1], Math.abs(d.lucro_liquido[1]))*100 : null;
+    const ativoVar = hasPrev? safeDiv(b.ativo[0]-b.ativo[1], b.ativo[1])*100 : null;
+    const carteiraVar = c.bruta[1]!==null? safeDiv(c.bruta[0]-c.bruta[1], c.bruta[1])*100 : null;
+    const basVar = (DATA.basileia[k][0]!==null && DATA.basileia[k][1]!==null)? (DATA.basileia[k][0]-DATA.basileia[k][1]) : null;
+
+    let items = [];
+    items.push(`Lucro líquido de R$ ${fmtM(d.lucro_liquido[0])} milhões em 2025${llVar!==null? ` (${llVar>=0?'+':''}${llVar.toFixed(1)}% vs. 2024)`:' (sem comparativo 2024 disponível)'}.`);
+    items.push(`Ativo total de R$ ${fmtM(b.ativo[0])} milhões${ativoVar!==null? ` (${ativoVar>=0?'+':''}${ativoVar.toFixed(1)}% vs. 2024)`:''}.`);
+    items.push(`Carteira de crédito bruta de R$ ${fmtM(c.bruta[0])} milhões${carteiraVar!==null? ` (${carteiraVar>=0?'+':''}${carteiraVar.toFixed(1)}% vs. 2024)`:''}.`);
+    if(DATA.basileia[k][0]!==null && k!=='rci'){
+      items.push(`Índice de Basileia em ${DATA.basileia[k][0].toFixed(2)}%${basVar!==null? ` (${basVar>=0?'+':''}${basVar.toFixed(2)} p.p. vs. 2024)`:''}.`);
+    } else if(k==='rci'){
+      items.push(`Índice de Basileia do Conglomerado Santander (do qual o RCI faz parte para fins de capital): ${DATA.basileia[k][0].toFixed(2)}% — não é um índice isolado do RCI.`);
+    } else {
+      items.push(`Índice de Basileia não divulgado individualmente no DF.`);
+    }
+    if(k==='stla') items.push(`Perímetro do conglomerado (Stellantis Financiamentos + Banco Stellantis + FIDCs) é o mesmo desde 2023 — crescimento de ativos é predominantemente orgânico. Qualidade de crédito por estágio não é comparável a 2024/2023 (mudança de modelo pela Res. 4.966/21).`);
+    if(k==='rci') items.push(`Balanço, DRE e carteira comparáveis a 2024/2023. Qualidade de crédito por estágio não é comparável (2024/2023 usam rating AA-H; 2025 usa Estágios 1/2/3, Res. 4.966/21).`);
+
+    const rationale = RATIONALE[k] || [];
+    const rationaleHtml = rationale.length ? `
+      <div class="rationale">
+        <div class="rationale-title">Racional / Contexto Operacional</div>
+        <ul>${rationale.map(r=>`<li>${r}</li>`).join('')}</ul>
+      </div>` : '';
+
+    cards += `<div class="hl-card"><div class="stripe" style="background:${m.color}"></div><h4>${m.name}</h4><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>${rationaleHtml}</div>`;
+  });
+  el.innerHTML = `
+    <h1 class="page-title">Key Highlights — 2025 vs. 2024</h1>
+    <div class="page-sub">Leitura objetiva por instituição, com base nos dados extraídos das Demonstrações Financeiras.</div>
+    <div class="hl-grid">${cards}</div>
+  `;
+};
+
+// ============ INIT ============
+showPage('geral');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
