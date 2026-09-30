@@ -3109,7 +3109,7 @@ RENDER.dre = function(){
         <option value="1">Ano anterior (2024)</option>
       </select>
     </div>
-    <div class="alert-bar"><b>Nota metodológica:</b> GM não segrega tarifas bancárias como receita própria. Volkswagen apresenta "Despesas Gerais e Administrativas" de forma combinada (pessoal + outras despesas administrativas), sem segregação de despesas de pessoal.</div>
+    <div class="alert-bar"><b>Nota metodológica:</b> GM não segrega tarifas bancárias como receita própria — por isso, para a GM, o grupo "Resultado Líquido de Juros e Tarifas" reflete apenas juros. Volkswagen apresenta "Despesas Gerais e Administrativas" de forma combinada (pessoal + outras despesas administrativas), sem segregação de despesas de pessoal.</div>
     <div class="table-wrap"><table id="dreTable"></table></div>
   `;
   document.getElementById('dreYearSel').onchange = renderDreTable;
@@ -3119,10 +3119,10 @@ RENDER.dre = function(){
 const DRE_ROWS = [
   {key:'receita_juros', label:'Receita de Juros e Similares'},
   {key:'despesa_juros', label:'Despesa de Juros e Similares'},
-  {key:'resultado_liquido_juros', label:'Resultado Líquido de Juros', subtotal:true},
-  {key:'pdd_dre', label:'Provisão para Perdas Esperadas (ECL/PDD)'},
-  {key:'resultado_apos_pdd', label:'Resultado após Provisão', subtotal:true},
   {key:'tarifas_servicos', label:'Receitas de Tarifas e Serviços'},
+  {key:'resultado_liquido_juros', label:'Resultado Líquido de Juros e Tarifas', subtotal:true, addTarifas:true},
+  {key:'pdd_dre', label:'Provisão para Perdas Esperadas (ECL/PDD)'},
+  {key:'resultado_apos_pdd', label:'Resultado após Provisão', subtotal:true, addTarifas:true},
   {key:'ganhos_perdas_ativos_passivos', label:'Ganhos (Perdas) com Ativos e Passivos Financeiros'},
   {key:'despesas_pessoal', label:'Despesas de Pessoal'},
   {key:'despesas_adm', label:'Outras Despesas Administrativas'},
@@ -3185,7 +3185,14 @@ function renderDreTable(){
   DRE_ROWS.forEach(row=>{
     tbody += `<tr class="${row.subtotal?'subtotal':''}"><td style="text-align:left;">${row.label}</td>`;
     ORDER.forEach(k=>{
-      const v = DATA.dre[k][row.key] ? DATA.dre[k][row.key][yearIdx] : null;
+      let v = DATA.dre[k][row.key] ? DATA.dre[k][row.key][yearIdx] : null;
+      // resultado_liquido_juros e resultado_apos_pdd agora exibem o grupo já somado às Tarifas e Serviços
+      // (linha própria de tarifas foi movida para cima, para dentro deste grupo) — não altera o dado bruto
+      // usado em outros cálculos (NIM, Índice de Eficiência), só a apresentação desta tabela.
+      if(row.addTarifas && v!==null){
+        const tarifas = DATA.dre[k].tarifas_servicos ? DATA.dre[k].tarifas_servicos[yearIdx] : null;
+        if(tarifas!==null && tarifas!==undefined) v = v + tarifas;
+      }
       const anr = anrFor(k, yearIdx);
       let pct = safeDiv(v, anr.value);
       let cell = 'N/D'; let cls='';
@@ -3735,7 +3742,7 @@ RENDER.kpis = function(){
   el.innerHTML = `
     <h1 class="page-title">KPI's Financeiros</h1>
     <div class="page-sub">Ano corrente (2025) — valores em R$ milhões, salvo indicação contrária</div>
-    <div class="alert-bar"><b>* ROAE da STLA:</b> usa Equity Ajustado Médio (2025+2024)/2 = PL Atribuível aos Controladores + NCI do Banco Stellantis, desconsiderando o efeito dos FIDCs (NCI de terceiros) no Patrimônio Líquido. Demais bancos usam PL Médio (2025+2024)/2. A linha "ROE Pontual (não ajustado)" mostra o efeito da diferença. Detalhamento completo na página Balanço Patrimonial.</div>
+    <div class="alert-bar"><b>* ROAE da STLA:</b> usa Equity Ajustado Médio (2025+2024)/2 = PL Atribuível aos Controladores + NCI do Banco Stellantis, desconsiderando o efeito dos FIDCs (NCI de terceiros) no Patrimônio Líquido. Demais bancos usam PL Médio (2025+2024)/2. A linha "ROE (ponta) — Equity Ajustado" aplica o mesmo ajuste ao saldo pontual de 2025 (sem médias); a linha "ROE Pontual (não ajustado)" usa o PL pontual sem qualquer ajuste, para mostrar o efeito do FIDC isoladamente. Detalhamento completo na página Balanço Patrimonial.</div>
     <div class="table-wrap"><table id="kpiTable"></table></div>
   `;
   const rows = [
@@ -3750,6 +3757,10 @@ RENDER.kpis = function(){
         const p=safeDiv(v,anr); return p===null?null:Math.abs(p)*100;
       }, fmt:'p', better:'low'},
     {label:'ROAE — Lucro / Equity* (%)', get:k=> roeFor(k), fmt:'p', better:'high'},
+    {label:'ROE (ponta) — Lucro / Equity Ajustado Pontual* (%)', get:k=>{
+        const equity = k==='stla' ? stlaAdjustedEquity(0) : DATA.bs[k].pl[0];
+        return safeDiv(DATA.dre[k].lucro_liquido[0], equity)*100;
+      }, fmt:'p', better:'high'},
     {label:'ROE Pontual (não ajustado) — Lucro / PL Final (%)', get:k=>safeDiv(DATA.dre[k].lucro_liquido[0], DATA.bs[k].pl[0])*100, fmt:'p', better:'high'},
     {label:'ROA — Lucro / Ativo Médio (%)', get:k=>safeDiv(DATA.dre[k].lucro_liquido[0], avg(DATA.bs[k].ativo[0],DATA.bs[k].ativo[1]))*100, fmt:'p', better:'high'},
     {label:'NIM — Res. Líquido de Juros / ANR (% a.a.)', get:k=>safeDiv(DATA.dre[k].resultado_liquido_juros[0], avg(DATA.carteira[k].liquida[0],DATA.carteira[k].liquida[1]))*100, fmt:'p', better:'high'},
